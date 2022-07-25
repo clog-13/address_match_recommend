@@ -16,3 +16,8 @@ type AddressEntity struct {
 	prop2      string
 	createTime time.Time
 }
+
+// FormatAddressEntity TODO
+func FormatAddressEntity(addr string) AddressEntity {
+	return AddressEntity{}
+}
