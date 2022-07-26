@@ -29,16 +29,54 @@ var (
 	IdfCache             = make(map[string]map[string]float64)
 )
 
+/**
+TC: 词数 Term Count, 某个词在文档中出现的次数
+TF: 词频 Term Frequency, 某个词在文档中出现的频率，TF = 该词在文档中出现的次数 / 该文档的总词数
+IDF: 逆文档词频 Inverse Document Frequency, IDF = log( 文档总数 / ( 包含该词的文档数 + 1 ) ), 分母加1是为了防止分母出现0的情况
+TF-IDF: 词条的特征值，TF-IDF = TF * IDF。
+*/
+
+// FindsimilarAddress 搜索相似地址
+// addressText: 详细地址文本，开头部分必须包含省、市、区
+func FindsimilarAddress(addressText string, topN int, explain bool) *Query {
+	query := NewQuery(topN)
+
+	// 解析地址
+	queryAddr := interpreter.Interpret(addressText)
+
+	// 为词条计算特征值
+	queryDoc := analyse(queryAddr)
+	query.QueryAddr = queryAddr
+	query.QueryDoc = queryDoc
+
+	// 从文件缓存或内存缓存获取所有文档(地址库)
+	allDocs := loadDocunentsFromCache(queryAddr)
+	// 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
+	var similarity float64
+	for _, v := range allDocs {
+		similarity = computeDocSimilarity(query, v, topN, explain)
+		if topN == 1 && similarity == 1 {
+			break
+		}
+	}
+
+	// 按相似度从高到低排序
+	if topN > 1 {
+		query.SortSimilarDocs()
+	}
+	return query
+}
+
 // 分词，设置词条权重
 func analyse(addr AddressEntity) Document {
 	doc := NewDocument(addr.Id)
 
-	//1. 分词。仅针对AddressEntity的text（地址解析后剩余文本）进行分词。
+	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
 	tokens := make([]string, 0)
 	if len(addr.Text) > 0 {
 		tokens = segmenter.Segment(addr.Text)
 	}
-	terms := make([]Term, len(tokens)+4)
+	terms := make([]Term, 0) // TODO 预分配空间
 
 	//2. 生成term
 	if !addr.Town.IsNil() {
@@ -325,36 +363,6 @@ func addTerm(text string, types byte, terms []Term) Term {
 	newTerm := NewTerm(types, termText)
 	terms = append(terms, newTerm)
 	return newTerm
-}
-
-func FindsimilarAddress(addressText string, topN int, explain bool) *Query {
-	query := NewQuery(topN)
-
-	// TODO
-	queryAddr := interpreter.interpret(addressText)
-
-	//从文件缓存或内存缓存获取所有文档。
-	allDocs := loadDocunentsFromCache(queryAddr)
-
-	//为词条计算特征值
-	queryDoc := analyse(queryAddr)
-	query.QueryAddr = queryAddr
-	query.QueryDoc = queryDoc
-
-	//对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
-	var similarity float64
-	for _, v := range allDocs {
-		similarity = computeDocSimilarity(query, v, topN, explain)
-		if topN == 1 && similarity == 1 {
-			break
-		}
-	}
-
-	//按相似度从高到低排序
-	if topN > 1 {
-		query.SortSimilarDocs()
-	}
-	return query
 }
 
 func loadDocunentsFromCache(address AddressEntity) []Document {

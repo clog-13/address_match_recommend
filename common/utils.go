@@ -35,3 +35,16 @@ func Head(text string, length int) string {
 	}
 	return text[:length]
 }
+
+func Substring(text string, begin, end int) string {
+	if len(text) == 0 {
+		return text
+	}
+	if begin < 0 {
+		begin = 0
+	}
+	if end >= len(text) {
+		end = len(text)
+	}
+	return text[begin:end]
+}
