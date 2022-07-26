@@ -18,9 +18,6 @@ type AddressEntity struct {
 	CreateTime time.Time
 }
 
-func FormatAddressEntity(addr string) AddressEntity {
-}
-
 func (a AddressEntity) IsNil() bool {
 
 }
