@@ -25,3 +25,13 @@ func IsNumericChars(text string) bool {
 	}
 	return true
 }
+
+func Head(text string, length int) string {
+	if len(text) == 0 || len(text) <= length {
+		return text
+	}
+	if length <= 0 {
+		return ""
+	}
+	return text[:length]
+}

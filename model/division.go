@@ -20,6 +20,7 @@ func (d Division) leastRegion() RegionEntity {
 }
 
 // TODO
+
 //public RegionEntity getTown() {
 //if(this.town!=null) return this.town;
 //if(this.street==null) return null;
@@ -43,5 +44,3 @@ func (d Division) leastRegion() RegionEntity {
 //this.town=null;
 //}
 //}
-
-func ()

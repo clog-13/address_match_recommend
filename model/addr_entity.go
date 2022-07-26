@@ -18,6 +18,12 @@ type AddressEntity struct {
 	CreateTime time.Time
 }
 
+func NewAddrEntity(text string) AddressEntity {
+	return AddressEntity{
+		Text: text,
+	}
+}
+
 func (a AddressEntity) IsNil() bool {
 
 }

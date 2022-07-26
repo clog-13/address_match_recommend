@@ -1,19 +1,30 @@
 package enum
 
-const (
-	Undefined  = '0'
-	Province   = '1'
-	City       = '2'
-	District   = '3'
-	StreetTerm = '4'
-	Town       = 'T'
-	Village    = 'V'
-	Road       = 'R'
-	RoadNum    = 'N'
-	Text       = 'X'
-	Ignore     = 'I'
+type Enum byte
 
-	Undefinded = 0
-	Country    = 10
-	Street     = 450
+const (
+	UndefinedTerm = '0'
+	ProvinceTerm  = '1'
+	CityTerm      = '2'
+	DistrictTerm  = '3'
+	StreetTerm    = '4'
+	TownTerm      = 'T'
+	VillageTerm   = 'V'
+	Road          = 'R'
+	RoadNum       = 'N'
+	Text          = 'X'
+	Ignore        = 'I'
+
+	UndefinedRegion    = 0
+	Country            = 10
+	ProvinceRegion     = 100
+	ProvinceLevelCity1 = 150
+	ProvinceLevelCity2 = 151
+	CityRegion         = 200
+	CityLevelDistrict  = 250
+	DistrictRegion     = 300
+	StreetRegion       = 450
+	PlatformL4         = 460
+	TownRegion         = 400
+	VillageRegion      = 410
 )

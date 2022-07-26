@@ -3,6 +3,7 @@ package similarity
 import (
 	"address_match_recommend/common"
 	"address_match_recommend/enum"
+	"address_match_recommend/interpret"
 	. "address_match_recommend/model"
 	"math"
 	"strconv"
@@ -19,16 +20,13 @@ var (
 
 	MissingIdf = 4.0
 
-	interpreter   AddressInterpreter
-	segmenter     = new(SimpleSegmenter)
-	defaultTokens = make([]string, 0)
-	cacheFolder   string
+	interpreter interpret.AddressInterpreter
+	segmenter   = new(SimpleSegmenter)
+	cacheFolder string
 
 	CacheVectorsInMemory = false
-	VECTORS_CACHE        = make(map[string][]Document)
+	VectorsCache         = make(map[string][]Document)
 	IdfCache             = make(map[string]map[string]float64)
-
-	timeBoost int64
 )
 
 // 分词，设置词条权重
@@ -44,11 +42,11 @@ func analyse(addr AddressEntity) Document {
 
 	//2. 生成term
 	if !addr.Town.IsNil() {
-		doc.Town = NewTerm(enum.Town, addr.Town.Name)
+		doc.Town = NewTerm(enum.TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
 	if !addr.Village.IsNil() {
-		doc.Village = NewTerm(enum.Village, addr.Village.Name)
+		doc.Village = NewTerm(enum.VillageTerm, addr.Village.Name)
 		terms = append(terms, doc.Village)
 	}
 	if len(addr.Road) > 0 {
@@ -145,18 +143,18 @@ func getBoostValue(forDoc bool, qdoc Document, qterm Term, ddoc Document, dterm 
 		types = qterm.Types
 	}
 	switch types {
-	case enum.Province:
-	case enum.City:
-	case enum.District:
+	case enum.ProvinceTerm:
+	case enum.CityTerm:
+	case enum.DistrictTerm:
 		value = BoostXl // 省市区、道路出现频次高，IDF值较低，但重要程度最高，因此给予比较高的加权权重
 	case enum.StreetTerm:
 		value = BoostXs //一般人对于城市街道范围概念不强，在地址中随意选择街道的可能性较高，因此降权处理
 	case enum.Text:
 		value = BoostM
-	case enum.Town:
-	case enum.Village:
+	case enum.TownTerm:
+	case enum.VillageTerm:
 		value = BoostXs
-		if enum.Town == types { //乡镇
+		if enum.TownTerm == types { //乡镇
 			//查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
 			//  乡镇相同：查询文档和地址库文档都加权BOOST_L，提高相似度
 			//  乡镇不同：只有查询文档的词条加权BOOST_L，地址库文档的词条因无法匹配不会进入该函数。结果是拉开相似度的差异
@@ -189,7 +187,7 @@ func getBoostValue(forDoc bool, qdoc Document, qterm Term, ddoc Document, dterm 
 				if !qdoc.Road.IsNil() && !ddoc.Road.IsNil() {
 					value = BoostL
 				}
-			} else { // 门牌号。注意：查询文档和地址库文档的门牌号都会进入此处执行，这一点跟Road、Town、Village不同。
+			} else { // 门牌号。注意：查询文档和地址库文档的门牌号都会进入此处执行，这一点跟Road、TownTerm、Village不同。
 				if qdoc.RoadNumValue > 0 && ddoc.RoadNumValue > 0 && !qdoc.Road.IsNil() && qdoc.Road == ddoc.Road {
 					if qdoc.RoadNumValue == ddoc.RoadNumValue {
 						value = float64(3)
@@ -333,7 +331,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) *Query {
 	query := NewQuery(topN)
 
 	// TODO
-	queryAddr := FormatAddressEntity(addressText)
+	queryAddr := interpreter.interpret(addressText)
 
 	//从文件缓存或内存缓存获取所有文档。
 	allDocs := loadDocunentsFromCache(queryAddr)
@@ -369,15 +367,15 @@ func loadDocunentsFromCache(address AddressEntity) []Document {
 		docs = loadDocumentsFromDatabase(cacheKey)
 		return docs
 	} else { // 从内存读取，如果未缓存到内存，则从文件加载到内存中
-		docs = VECTORS_CACHE[cacheKey]
+		docs = VectorsCache[cacheKey]
 		if docs == nil {
 			// TODO
-			docs = VECTORS_CACHE[cacheKey]
+			docs = VectorsCache[cacheKey]
 			if docs == nil {
 				docs = loadDocumentsFromDatabase(cacheKey)
 				if docs == nil {
 					docs = make([]Document, 0)
-					VECTORS_CACHE[cacheKey] = docs
+					VectorsCache[cacheKey] = docs
 				}
 			}
 

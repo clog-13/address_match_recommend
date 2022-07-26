@@ -29,7 +29,7 @@ func (r RegionEntity) IsTown() bool {
 	switch r.Types {
 	case enum.Country:
 		return true
-	case enum.Street:
+	case enum.StreetRegion:
 		if r.Name == "" {
 			return false
 		}
