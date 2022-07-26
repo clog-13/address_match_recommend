@@ -13,8 +13,8 @@ import (
 
 var (
 	BoostM  = 1.0  // 正常权重
-	BoostL  = 2.0  // 加权高值
-	BoostXl = 4.0  // 加权高值
+	BoostL  = 2.0  // 加权
+	BoostXl = 4.0  // 加权
 	BoostS  = 0.5  // 降权
 	BoostXs = 0.25 // 降权
 
@@ -78,6 +78,8 @@ func analyse(addr AddressEntity) Document {
 	}
 	terms := make([]Term, 0) // TODO 预分配空间
 
+	// TODO isNil
+
 	//2. 生成term
 	if !addr.Town.IsNil() {
 		doc.Town = NewTerm(enum.TownTerm, addr.Town.Name)
@@ -99,7 +101,7 @@ func analyse(addr AddressEntity) Document {
 		terms = append(terms, doc.RoadNum)
 	}
 
-	//2.2 地址文本分词后的token
+	// 地址文本分词后的token
 	for _, v := range tokens {
 		addTerm(v, enum.Text, terms)
 	}
@@ -120,11 +122,8 @@ func analyse(addr AddressEntity) Document {
 	return doc
 }
 
-/**
- * 为所有文档的全部词条统计逆向引用情况。
- * @param docs 所有文档。
- * @return 全部词条的逆向引用情况，key为词条，value为该词条在多少个文档中出现过。
- */
+// 为所有文档的全部词条统计逆向引用情况, 返回 全部词条的逆向引用情况
+// key：词条, value：该词条在多少个文档中出现过
 func statInverseDocRefers(docs []Document) map[string]int {
 	idrc := make(map[string]int)
 	if docs == nil {
@@ -259,7 +258,6 @@ func translateRoadNum(text string) int {
 			sb += string(c)
 			continue
 		}
-		// TODO
 		switch string(c) { // 中文全角数字字符
 		case "０":
 			sb += "0"
@@ -438,39 +436,13 @@ func loadDocumentsFromDatabase(key string) []Document {
 	docs := make([]Document, 0)
 
 	return docs
-	//List<Document> docs = new ArrayList<Document>();
-	//
-	//String filePath = getCacheFolder() + "/" + key + ".vt";
-	//File file = new File(filePath);
-	//if(!file.exists()) return docs;
-	//try {
-	//	FileInputStream fsr = new FileInputStream(file);
-	//	InputStreamReader sr = new InputStreamReader(fsr, "utf8");
-	//	BufferedReader br = new BufferedReader(sr);
-	//	String line = null;
-	//	while((line = br.readLine()) != null){
-	//	Document doc = deserialize(line);
-	//	if(doc==null) continue;
-	//	docs.add(doc);
-	//}
-	//	br.close();
-	//	sr.close();
-	//	fsr.close();
-	//} catch (Exception ex) {
-	//	LOG.error("[doc-vec] [cache] [error] Error in reading file: " + filePath, ex);
-	//}
-	//
-	//return docs;
 }
 
 func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) float64 {
 	var dterm Term
-	//=====================================================================
-	//计算text类型词条的稠密度、匹配率
-	//1. Text类型词条匹配情况
-
-	qTextTermCount := 0                                    //查询文档Text类型词条数量
-	dTextTermMatchCount, matchStart, matchEnd := 0, -1, -1 //地址库文档匹配上的Text词条数量
+	// Text类型词条匹配情况
+	qTextTermCount := 0                                    // 查询文档Text类型词条数量
+	dTextTermMatchCount, matchStart, matchEnd := 0, -1, -1 // 地址库文档匹配上的Text词条数量
 	for _, v := range query.QueryDoc.Terms {
 		if v.Types != enum.Text { //仅针对Text类型词条计算 词条稠密度、词条匹配率
 			continue
@@ -497,12 +469,12 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 			}
 		}
 	}
-	//2. 计算稠密度、匹配率
+	// 计算稠密度、匹配率
 	textTermDensity, textTermCoord := float64(1), float64(1)
 	if qTextTermCount > 0 {
 		textTermCoord = math.Sqrt(float64(dTextTermMatchCount/qTextTermCount))*0.5 + 0.5
 	}
-	//词条稠密度：
+	// 词条稠密度：
 	// 查询文档a的文本词条为：【翠微西里】
 	// 地址库文档词条为：【翠微北里12号翠微嘉园B座西801】
 	// 地址库词条能匹配上【翠微西里】的每一个词条，但不是连续匹配，中间间隔了其他词条，稠密度不够，这类文档应当比能够连续匹配上查询文档的权重低
@@ -523,8 +495,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		simiDoc = NewSimilarDocument(doc)
 	}
 
-	//=====================================================================
-	//计算TF-IDF和相似度所需的中间值
+	// 计算TF-IDF和相似度的中间值
 	var sumQD, sumQQ, sumDD, qtfidf, dtfidf float64 = 0, 0, 0, 0, 0
 	var dboost, qboost float64 = 0, 0
 	for _, v := range query.QueryDoc.Terms {

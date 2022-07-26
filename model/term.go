@@ -10,7 +10,10 @@ type Term struct {
 
 // NewTerm TODO
 func NewTerm(types byte, text string) Term {
-	return Term{Types: types}
+	return Term{
+		Types: types,
+		Text:  text,
+	}
 }
 
 func (t Term) IsNil() bool {
