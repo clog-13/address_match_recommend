@@ -1,24 +1,22 @@
 package model
 
 type Division struct {
-	province RegionEntity
-	city     RegionEntity
-	district RegionEntity
-	street   RegionEntity
-	town     RegionEntity
-	village  RegionEntity
+	Province RegionEntity
+	City     RegionEntity
+	District RegionEntity
+	Street   RegionEntity
+	Town     RegionEntity
+	Village  RegionEntity
 }
 
 // 获取最小一级有效行政区域对象
 func (d Division) leastRegion() RegionEntity {
-	// TODO
 	//if(hasVillage()) return getVillage();
 	//if(hasTown()) return getTown();
 	//if(hasStreet()) return getStreet();
 	//if(hasDistrict()) return getDistrict();
 	//if(hasCity()) return getCity();
 	//return getProvince();
-	return d.province
 }
 
 // TODO
@@ -45,3 +43,5 @@ func (d Division) leastRegion() RegionEntity {
 //this.town=null;
 //}
 //}
+
+func ()

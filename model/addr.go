@@ -1,7 +1,7 @@
 package model
 
 type DeliveryAddr struct {
-	Id uint `gorm:"primaryKey;comment:'用户ID'" json:"id"`
+	Id uint `gorm:"primaryKey;comment:'用户ID'" json:"Id"`
 
 	Country  string `gorm:"type:varchar(32);comment:'国家'" json:"country"`
 	Province string `gorm:"type:varchar(32);comment:'省'" json:"province"`

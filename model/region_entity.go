@@ -9,73 +9,77 @@ const ()
 
 // RegionEntity 行政区域实体
 type RegionEntity struct {
-	serialVersionUID int64 // -111163973997033386L
+	SerialVersionUID int64 // -111163973997033386L
 
-	id           int64
-	parentId     int64
-	name         string
-	alias        string
-	types        int // RegionType enum
-	zip          string
-	children     []RegionEntity
-	orderedNames []string
+	Id           int64
+	ParentId     int64
+	Name         string
+	Alias        string
+	Types        int // RegionType enum
+	Zip          string
+	Children     []RegionEntity
+	OrderedNames []string
+}
+
+func (r RegionEntity) IsNil() bool {
+
 }
 
 func (r RegionEntity) IsTown() bool {
-	switch r.types {
+	switch r.Types {
 	case enum.Country:
 		return true
 	case enum.Street:
-		if r.name == "" {
+		if r.Name == "" {
 			return false
 		}
-		return len(r.name) <= 4 &&
-			(string(r.name[len(r.name)-1]) == "镇" || string(r.name[len(r.name)-1]) == "乡")
+		return len(r.Name) <= 4 &&
+			(string(r.Name[len(r.Name)-1]) == "镇" || string(r.Name[len(r.Name)-1]) == "乡")
 	}
 	return false
 }
 
 // OrderedNameAndAlias 获取所有名称和别名列表，按字符长度倒排序。
 func (r RegionEntity) OrderedNameAndAlias() []string {
-	if r.orderedNames == nil {
-		return r.orderedNames
+	if r.OrderedNames == nil {
+		return r.OrderedNames
 	}
 	r.buildOrderedNameAndAlias()
-	return r.orderedNames
+	return r.OrderedNames
 }
 
 func (r RegionEntity) buildOrderedNameAndAlias() {
-	if r.orderedNames != nil {
+	if r.OrderedNames != nil {
 		return
 	}
 	tokens := make([]string, 0)
-	if r.alias != "" && len(strings.TrimSpace(r.alias)) > 0 {
-		tokens = strings.Split(strings.TrimSpace(r.alias), ";")
+	if r.Alias != "" && len(strings.TrimSpace(r.Alias)) > 0 {
+		tokens = strings.Split(strings.TrimSpace(r.Alias), ";")
 	}
 	if tokens == nil || len(tokens) <= 0 {
-		r.orderedNames = make([]string, 1)
+		r.OrderedNames = make([]string, 1)
 	} else {
-		r.orderedNames = make([]string, len(tokens)+1)
+		r.OrderedNames = make([]string, len(tokens)+1)
 	}
-	r.orderedNames = append(r.orderedNames, r.name)
+	r.OrderedNames = append(r.OrderedNames, r.Name)
 	if tokens != nil {
 		for _, v := range tokens {
 			if v == "" || len(strings.TrimSpace(v)) <= 0 {
 				continue
 			}
-			r.orderedNames = append(r.orderedNames, strings.TrimSpace(v))
+			r.OrderedNames = append(r.OrderedNames, strings.TrimSpace(v))
 		}
 	}
 
 	exchanged := true
-	endIndex := len(r.orderedNames) - 1
+	endIndex := len(r.OrderedNames) - 1
 	for exchanged && endIndex > 0 {
 		exchanged = false
 		for i := 0; i < endIndex; i++ {
-			if len(r.orderedNames[i]) < len(r.orderedNames[i+1]) {
-				temp := r.orderedNames[i]
-				r.orderedNames[i] = r.orderedNames[i+1]
-				r.orderedNames[i+1] = temp
+			if len(r.OrderedNames[i]) < len(r.OrderedNames[i+1]) {
+				temp := r.OrderedNames[i]
+				r.OrderedNames[i] = r.OrderedNames[i+1]
+				r.OrderedNames[i+1] = temp
 				exchanged = true
 			}
 		}

@@ -11,6 +11,12 @@ type Document struct {
 	RoadNumValue int
 }
 
+func NewDocument(id int) Document {
+	return Document{
+		Id: id,
+	}
+}
+
 // GetTerm 获取词语对象。
 func (d Document) GetTerm(term string) Term {
 	if len(term) == 0 || len(d.Terms) == 0 {

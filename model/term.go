@@ -7,3 +7,12 @@ type Term struct {
 	Idf        float64
 	Ref        *Term
 }
+
+// NewTerm TODO
+func NewTerm(types byte, text string) Term {
+	return Term{Types: types}
+}
+
+func (t Term) IsNil() bool {
+
+}
