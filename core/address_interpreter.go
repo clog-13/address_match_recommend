@@ -1,9 +1,8 @@
-package interpret
+package core
 
 import (
 	"address_match_recommend/index"
-	. "address_match_recommend/model"
-	"address_match_recommend/persist"
+	. "address_match_recommend/models"
 	"regexp"
 	"strings"
 )
@@ -12,7 +11,7 @@ import (
 
 var (
 	termIndex index.TermIndexBuilder
-	persister persist.AddressPersister
+	persister AddressPersister
 
 	specialChars1         = []byte(" \r\n\t,，。·.．;；:：、！@$%*^`~=+&'\"|_-\\/")
 	invalidTown           = make(map[string]struct{})
@@ -100,7 +99,9 @@ func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) Addre
 // TODO point
 
 func extractBuildingNum(addr AddressEntity) bool {
-	if len(addr.Text) <= 0 {return false}
+	if len(addr.Text) <= 0 {
+		return false
+	}
 
 	//抽取building
 	found := false
@@ -110,48 +111,5 @@ func extractBuildingNum(addr AddressEntity) bool {
 	//match, _ := regexp.MatchString(PBuildingNum1, addr.Text)
 	RegexpPBuildingNum1.FindAllString(addr.Text, -1)
 
-
-	while(matcher.find()){
-		if(matcher.end()==matcher.start()) continue; //忽略null匹配结果
-		building = StringUtil.substring(addr.getText(), matcher.start(), matcher.end()-1);
-		//最小的匹配模式形如：7栋301，包括4个非空goup：[0:7栋301]、[1:7栋]、[2:栋]、[3:301]
-		int nonEmptyGroups = 0;
-		for(int i=0; i<matcher.groupCount(); i++){
-			String groupStr = matcher.group(i);
-			if(groupStr!=null) nonEmptyGroups++;
-		}
-		if(P_BUILDING_NUM_V.matcher(building).find() && nonEmptyGroups>3){
-			//山东青岛市南区宁夏路118号4号楼6单元202。去掉【路xxx号】前缀
-			building = StringUtil.substring(addr.getText(), matcher.start(), matcher.end()-1);
-			int pos = matcher.start();
-			if(building.startsWith("路") || building.startsWith("街") || building.startsWith("巷")){
-				pos += building.indexOf("号")+1;
-				building = StringUtil.substring(addr.getText(), pos, matcher.end()-1);
-			}
-			addr.setBuildingNum(building);
-			addr.setText(StringUtil.head(addr.getText(), pos));
-			found = true;
-			break;
-		}
-	}
-	if !found {
-		//xx-xx-xx（xx栋xx单元xxx）
-		matcher = P_BUILDING_NUM2.matcher(addr.getText());
-		if(matcher.find()){
-			addr.setBuildingNum(StringUtil.substring(addr.getText(), matcher.start(), matcher.end()-1));
-			addr.setText(StringUtil.head(addr.getText(), matcher.start()));
-			found = true;
-		}
-	}
-	if !found {
-		//xx组xx号
-		matcher = P_BUILDING_NUM3.matcher(addr.getText());
-		if(matcher.find()){
-			addr.setBuildingNum(StringUtil.substring(addr.getText(), matcher.start(), matcher.end()-1));
-			addr.setText(StringUtil.head(addr.getText(), matcher.start()));
-			found = true;
-		}
-	}
-
-	return found;
+	return found
 }

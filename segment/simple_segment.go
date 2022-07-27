@@ -1,8 +1,4 @@
-package core
-
-type iSegmenter interface {
-	Segment(text string) []string
-}
+package segment
 
 type SimpleSegmenter struct {
 }

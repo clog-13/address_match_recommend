@@ -1,11 +1,10 @@
 package core
 
 import (
-	"address_match_recommend/interpret"
-	"address_match_recommend/model"
-	"address_match_recommend/models"
+	. "address_match_recommend/models"
+	"address_match_recommend/segment"
 	"address_match_recommend/similarity"
-	"address_match_recommend/util"
+	"address_match_recommend/utils"
 	"math"
 	"strconv"
 )
@@ -21,8 +20,8 @@ var (
 
 	MissingIdf = 4.0
 
-	interpreter interpret.AddressInterpreter
-	segmenter   = new(model.SimpleSegmenter)
+	interpreter AddressInterpreter
+	segmenter   = new(segment.SimpleSegmenter)
 	cacheFolder string
 
 	CacheVectorsInMemory = false
@@ -69,7 +68,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) *similarity.
 }
 
 // 分词，设置词条权重
-func analyse(addr model.AddressEntity) similarity.Document {
+func analyse(addr AddressEntity) similarity.Document {
 	doc := similarity.NewDocument()
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
@@ -83,19 +82,19 @@ func analyse(addr model.AddressEntity) similarity.Document {
 
 	//2. 生成term
 	if !addr.Town.IsNil() {
-		doc.Town = similarity.NewTerm(models.TownTerm, addr.Town.Name)
+		doc.Town = similarity.NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
 	if !addr.Village.IsNil() {
-		doc.Village = similarity.NewTerm(models.VillageTerm, addr.Village.Name)
+		doc.Village = similarity.NewTerm(VillageTerm, addr.Village.Name)
 		terms = append(terms, doc.Village)
 	}
 	if len(addr.Road) > 0 {
-		doc.Road = similarity.NewTerm(models.RoadTerm, addr.Road)
+		doc.Road = similarity.NewTerm(RoadTerm, addr.Road)
 		terms = append(terms, doc.Road)
 	}
 	if len(addr.RoadNum) > 0 {
-		roadNumTerm := similarity.NewTerm(models.RoadNumTerm, addr.RoadNum)
+		roadNumTerm := similarity.NewTerm(RoadNumTerm, addr.RoadNum)
 		doc.RoadNum = roadNumTerm
 		doc.RoadNumValue = translateRoadNum(addr.RoadNum)
 		roadNumTerm.Ref = &doc.Road
@@ -104,7 +103,7 @@ func analyse(addr model.AddressEntity) similarity.Document {
 
 	// 地址文本分词后的token
 	for _, v := range tokens {
-		addTerm(v, models.TextTerm, terms)
+		addTerm(v, TextTerm, terms)
 	}
 
 	idfs, ok := IdfCache[buildCacheKey(addr)]
@@ -151,7 +150,7 @@ func statInverseDocRefers(docs []similarity.Document) map[string]int {
 
 func generateIDFCacheEntryKey(term similarity.Term) string {
 	key := term.Text
-	if models.RoadNumTerm == term.Types {
+	if RoadNumTerm == term.Types {
 		num := translateRoadNum(key)
 		if term.Ref == nil {
 			key = ""
@@ -181,18 +180,18 @@ func getBoostValue(forDoc bool, qdoc similarity.Document, qterm similarity.Term,
 		types = qterm.Types
 	}
 	switch types {
-	case models.ProvinceTerm:
-	case models.CityTerm:
-	case models.DistrictTerm:
+	case ProvinceTerm:
+	case CityTerm:
+	case DistrictTerm:
 		value = BoostXl // 省市区、道路出现频次高，IDF值较低，但重要程度最高，因此给予比较高的加权权重
-	case models.StreetTerm:
+	case StreetTerm:
 		value = BoostXs //一般人对于城市街道范围概念不强，在地址中随意选择街道的可能性较高，因此降权处理
-	case models.TextTerm:
+	case TextTerm:
 		value = BoostM
-	case models.TownTerm:
-	case models.VillageTerm:
+	case TownTerm:
+	case VillageTerm:
 		value = BoostXs
-		if models.TownTerm == types { //乡镇
+		if TownTerm == types { //乡镇
 			//查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
 			//  乡镇相同：查询文档和地址库文档都加权BOOST_L，提高相似度
 			//  乡镇不同：只有查询文档的词条加权BOOST_L，地址库文档的词条因无法匹配不会进入该函数。结果是拉开相似度的差异
@@ -218,10 +217,10 @@ func getBoostValue(forDoc bool, qdoc similarity.Document, qterm similarity.Term,
 				}
 			}
 		}
-	case models.RoadTerm:
-	case models.RoadNumTerm:
+	case RoadTerm:
+	case RoadNumTerm:
 		if qdoc.Town.IsNil() || qdoc.Village.IsNil() { // 有乡镇有村庄，不再考虑道路、门牌号的加权
-			if models.RoadTerm == types { //道路
+			if RoadTerm == types { //道路
 				if !qdoc.Road.IsNil() && !ddoc.Road.IsNil() {
 					value = BoostL
 				}
@@ -396,7 +395,7 @@ func loadDocunentsFromCache(address AddressEntity) []similarity.Document {
 					idfs = make(map[string]float64, len(termReferences))
 					for k, v := range termReferences {
 						idf := 0.0
-						if util.IsAnsiChars(k) || util.IsNumericChars(k) {
+						if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
 							idf = 2.0
 						} else {
 							idf = math.Log(float64(len(docs) / (v + 1)))
@@ -445,13 +444,13 @@ func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN
 	qTextTermCount := 0                                    // 查询文档Text类型词条数量
 	dTextTermMatchCount, matchStart, matchEnd := 0, -1, -1 // 地址库文档匹配上的Text词条数量
 	for _, v := range query.QueryDoc.Terms {
-		if v.Types != models.TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+		if v.Types != TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
 			continue
 		}
 		qTextTermCount++
 		for i := 0; i < len(doc.Terms); i++ {
 			term := doc.Terms[i]
-			if term.Types != models.TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+			if term.Types != TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
 				continue
 			}
 			if term.Text == v.Text {
@@ -503,7 +502,7 @@ func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN
 		qboost = getBoostValue(false, query.QueryDoc, v, doc, similarity.Term{})
 		qtfidf = v.Idf * qboost
 		dterm = doc.GetTerm(v.Text)
-		if dterm == (similarity.Term{}) && models.RoadNumTerm == v.Types {
+		if dterm == (similarity.Term{}) && RoadNumTerm == v.Types {
 			if doc.RoadNum != (similarity.Term{}) && doc.Road != (similarity.Term{}) && &doc.Road == v.Ref {
 				dterm = doc.RoadNum
 			}
@@ -514,7 +513,7 @@ func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN
 			dboost = getBoostValue(true, query.QueryDoc, v, doc, dterm)
 		}
 		coord, density := float64(1), float64(1)
-		if dterm != (similarity.Term{}) && models.TextTerm == dterm.Types {
+		if dterm != (similarity.Term{}) && TextTerm == dterm.Types {
 			coord = textTermCoord
 			density = textTermDensity
 		}
@@ -528,8 +527,8 @@ func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN
 		if explain && topN > 1 && dterm != (similarity.Term{}) {
 			mt := new(similarity.MatchedTerm)
 			mt.Boost = dboost
-			mt.Tfidf = dtfidf
-			if dterm.Types == models.TextTerm {
+			mt.TfIdf = dtfidf
+			if dterm.Types == TextTerm {
 				mt.Density = density
 				mt.Coord = coord
 			} else {

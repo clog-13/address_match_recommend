@@ -1,7 +1,7 @@
 package index
 
 import (
-	"address_match_recommend/util"
+	"address_match_recommend/utils"
 )
 
 type TermIndexEntry struct {
@@ -10,7 +10,7 @@ type TermIndexEntry struct {
 	Children map[byte]TermIndexEntry
 }
 
-func (tie TermIndexEntry) buildIndex(text string, pos int, item TermIndexItem) {
+func (tie TermIndexEntry) BuildIndex(text string, pos int, item TermIndexItem) {
 	if len(text) == 0 || pos < 0 || pos >= len(text) {
 		return
 	}
@@ -20,7 +20,7 @@ func (tie TermIndexEntry) buildIndex(text string, pos int, item TermIndexItem) {
 		entry, ok := tie.Children[c]
 		if !ok {
 			entry = TermIndexEntry{
-				Key:      util.Head(text, pos+1),
+				Key:      utils.Head(text, pos+1),
 				Children: map[byte]TermIndexEntry{c: entry},
 			}
 		}
@@ -28,6 +28,6 @@ func (tie TermIndexEntry) buildIndex(text string, pos int, item TermIndexItem) {
 			entry.Items = append(entry.Items, item)
 			return
 		}
-		entry.buildIndex(text, pos+1, item)
+		entry.BuildIndex(text, pos+1, item)
 	}
 }

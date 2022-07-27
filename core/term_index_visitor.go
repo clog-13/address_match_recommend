@@ -1,4 +1,6 @@
-package index
+package core
+
+import "address_match_recommend/index"
 
 type TermIndexVisitor interface {
 	StartRound()
@@ -8,7 +10,7 @@ type TermIndexVisitor interface {
 	//@param entry 当前索引条目。
 	//@param pos 当前匹配位置
 	//@return 是可接受的匹配项时返回true，否则返回false。对于可接受的匹配项会调用{@link #endVisit(TermIndexEntry)}，否则不会调用。
-	Visit(entry TermIndexEntry, text string, pos int) bool
+	Visit(entry index.TermIndexEntry, text string, pos int) bool
 
 	// PositionAfterAcceptItem 如果visit时接受了某个索引项，该方法会返回接受索引项之后当前匹配的指针
 	PositionAfterAcceptItem() int
@@ -16,7 +18,7 @@ type TermIndexVisitor interface {
 	//结束索引条目的访问。
 	//@param entry 当前索引条目。
 	//@param pos 当前匹配位置
-	endVisit(entry TermIndexEntry, text string, pos int)
+	endVisit(entry index.TermIndexEntry, text string, pos int)
 
 	//结束一轮词条匹配。
 	endRound()

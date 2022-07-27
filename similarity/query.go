@@ -1,10 +1,10 @@
 package similarity
 
-import "address_match_recommend/model"
+import "address_match_recommend/models"
 
 type Query struct {
 	topN      int
-	QueryAddr model.AddressEntity
+	QueryAddr models.AddressEntity
 	QueryDoc  Document
 
 	SimiDocs []SimilarDocument

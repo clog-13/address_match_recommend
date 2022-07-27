@@ -5,13 +5,17 @@ import (
 )
 
 type TermIndexItem struct {
-	Types models.Enum
+	Types models.TermEnum
 	Value any
 }
 
-func NewTermIndexItem(t models.Enum, v any) TermIndexItem {
+func NewTermIndexItem(t models.TermEnum, v any) TermIndexItem {
 	return TermIndexItem{
 		Types: t,
 		Value: v,
 	}
+}
+
+func (tii TermIndexItem) IsNil() bool {
+
 }

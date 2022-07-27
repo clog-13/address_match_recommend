@@ -9,38 +9,51 @@ type Division struct {
 	Village  RegionEntity
 }
 
-// 获取最小一级有效行政区域对象
-func (d Division) leastRegion() RegionEntity {
-	//if(hasVillage()) return getVillage();
-	//if(hasTown()) return getTown();
-	//if(hasStreet()) return getStreet();
-	//if(hasDistrict()) return getDistrict();
-	//if(hasCity()) return getCity();
-	//return getProvince();
+// LeastRegion 获取最小一级有效行政区域对象
+func (d Division) LeastRegion() RegionEntity {
+	if !d.Village.IsNil() {
+		return d.Village
+	}
+	if !d.Town.IsNil() {
+		return d.Town
+	}
+	if !d.Street.IsNil() {
+		return d.Street
+	}
+	if !d.District.IsNil() {
+		return d.District
+	}
+	if !d.City.IsNil() {
+		return d.City
+	}
+	return d.Province
 }
 
-// TODO
+func (d Division) GetTown() RegionEntity {
+	if !d.Town.IsNil() {
+		return d.Town
+	}
+	if d.Street.IsNil() {
+		return RegionEntity{}
+	}
+	if d.Street.IsTown() {
+		return d.Street
+	}
+	return RegionEntity{}
+}
 
-//public RegionEntity getTown() {
-//if(this.town!=null) return this.town;
-//if(this.street==null) return null;
-//return this.street.isTown() ? this.street : null;
-//}
-//
-//public void setTown(RegionEntity value) {
-//if(value==null) {
-//this.town=null;
-//return;
-//}
-//switch(value.getType()){
-//case Town:
-//this.town=value;
-//return;
-//case Street:
-//case PlatformL4:
-//this.street = value;
-//return;
-//default:
-//this.town=null;
-//}
-//}
+func (d Division) SetTown(value RegionEntity) {
+	if value.IsNil() {
+		d.Town = value
+		return
+	}
+	switch value.Types {
+	case TownRegion:
+		d.Town = value
+	case StreetRegion:
+	case PlatformL4:
+		d.Street = value
+	default:
+		d.Town = RegionEntity{}
+	}
+}

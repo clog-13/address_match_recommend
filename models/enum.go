@@ -1,6 +1,7 @@
 package models
 
-type Enum byte
+type TermEnum byte
+type RegionEnum int
 
 const (
 	UndefinedTerm = '0'

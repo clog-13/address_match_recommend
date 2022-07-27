@@ -85,3 +85,7 @@ func (r RegionEntity) buildOrderedNameAndAlias() {
 		endIndex--
 	}
 }
+
+func (r RegionEntity) Equal(t RegionEntity) bool {
+
+}
