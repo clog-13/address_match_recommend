@@ -13,12 +13,8 @@ type RegionEntity struct {
 	Alias        string
 	Types        int // RegionType enum
 	Zip          string
-	Children     []RegionEntity
+	Children     []*RegionEntity
 	OrderedNames []string
-}
-
-func (r RegionEntity) IsNil() bool {
-
 }
 
 func (r RegionEntity) IsTown() bool {
@@ -84,5 +80,4 @@ func (r RegionEntity) buildOrderedNameAndAlias() {
 }
 
 func (r RegionEntity) Equal(t RegionEntity) bool {
-
 }

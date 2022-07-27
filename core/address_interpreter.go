@@ -4,7 +4,6 @@ import (
 	"address_match_recommend/index"
 	. "address_match_recommend/models"
 	"regexp"
-	"strings"
 )
 
 // AddressInterpreter 地址解析操作, 从地址文本中解析出省、市、区、街道、乡镇、道路等地址组成部分
@@ -75,37 +74,32 @@ func NewAddressInterpreter(persister AddressPersister, visitor TermIndexVisitor)
 }
 
 // Interpret 将地址进行标准化处理, 解析成 AddressEntity
-func (ai AddressInterpreter) Interpret(addressText string) AddressEntity {
+func (ai AddressInterpreter) Interpret(entity *AddressEntity) {
 	visitor := NewRegionInterpreterVisitor(persister)
-	return ai.interpret(addressText, visitor)
+	ai.interpret(entity, visitor)
 }
 
-func (ai AddressInterpreter) interpret(addressText string, visitor RegionInterpreterVisitor) AddressEntity {
-	if len(addressText) == 0 || len(strings.TrimSpace(addressText)) <= 0 {
-		return AddressEntity{}
-	}
-	entity := NewAddrEntity(addressText)
-
+func (ai AddressInterpreter) interpret(entity *AddressEntity, visitor RegionInterpreterVisitor) {
 	// 清洗下开头垃圾数据, 针对用户数据
 	ai.prepare(entity)
 
 	// extractBuildingNum, 提取建筑物号
 	ai.extractBuildingNum(entity)
-	// 去除特殊字符
-	removeSpecialChars(entity)
-	// 提取包括的数据
-	var brackets = extractBrackets(entity)
-	// 去除包括的特殊字符
-	brackets = brackets.remove(specialChars2)
-	removeBrackets(entity)
-	// 提取行政规划标准地址
-	extractRegion(entity, visitor)
-	// 规整省市区街道等匹配的结果
-	removeRedundancy(entity, visitor)
-	// 提取道路信息
-	extractRoad(entity)
-	// 提取农村信息
-	// extractTownVillage(entity)
+
+	//// 去除特殊字符
+	//removeSpecialChars(entity)
+	//// 提取包括的数据
+	//var brackets = extractBrackets(entity)
+	//// 去除包括的特殊字符
+	//brackets = brackets.remove(specialChars2)
+	//removeBrackets(entity)
+	//// 提取行政规划标准地址
+	//extractRegion(entity, visitor)
+	//// 规整省市区街道等匹配的结果
+	//removeRedundancy(entity, visitor)
+	//// 提取道路信息
+	//extractRoad(entity)
+
 	/**
 	  entity.text = entity.text!!.replace("[0-9A-Za-z\\#]+(单元|楼|室|层|米|户|\\#)", "")
 	  entity.text = entity.text!!.replace("[一二三四五六七八九十]+(单元|楼|室|层|米|户)", "")
@@ -115,19 +109,17 @@ func (ai AddressInterpreter) interpret(addressText string, visitor RegionInterpr
 	      if (entity.road.isNullOrBlank()) extractRoad(entity)
 	  }
 	*/
-
-	return entity
 }
 
 // TODO
 
 // 清洗下开头垃圾数据
-func (ai AddressInterpreter) prepare(entity AddressEntity) {
+func (ai AddressInterpreter) prepare(entity *AddressEntity) {
 	if len(entity.Text) == 0 {
 		return
 	}
 	// 去除开头的数字, 字母, 空格等
-	p, _ := regexp.Compile("[ \\da-zA-Z\r\n\t,，。·.．;；:：、！@$%*^`~=+&'\"|_\\-\\/]")
+	//p, _ := regexp.Compile("[ \\da-zA-Z\r\n\t,，。·.．;；:：、！@$%*^`~=+&'\"|_\\-\\/]")
 
 	/**
 	  entity.text = entity.text?.trimStart {
@@ -140,35 +132,36 @@ func (ai AddressInterpreter) prepare(entity AddressEntity) {
 }
 
 // 提取建筑物号
-func (ai AddressInterpreter) extractBuildingNum(entity AddressEntity) bool {
+func (ai AddressInterpreter) extractBuildingNum(entity *AddressEntity) bool {
 	if len(entity.Text) == 0 {
 		return false
 	}
-	found := false      // 是否找到的标志
-	var building string // 最后匹配的文本
-	
+	found := false // 是否找到的标志
+	//var building string // 最后匹配的文本
+
+	return found
 }
 
-func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []AddressEntity {
-	if addrTextList == nil {
-		return nil
-	}
-	numSuccess, numFail := 0, 0
-	addresses := make([]AddressEntity, 0)
-	for _, addrText := range addrTextList {
-		if len(addrText) == 0 {
-			continue
-		}
-		address := interpretSimgle(addrText, visitor)
-		if address.IsNil() || !address.City.IsNil() || !address.District.IsNil() {
-			numFail++
-			continue
-		}
-		numSuccess++
-		addresses = append(addresses, address)
-	}
-	return addresses
-}
-
-func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) AddressEntity {
-}
+//func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []AddressEntity {
+//	if addrTextList == nil {
+//		return nil
+//	}
+//	numSuccess, numFail := 0, 0
+//	addresses := make([]AddressEntity, 0)
+//	for _, addrText := range addrTextList {
+//		if len(addrText) == 0 {
+//			continue
+//		}
+//		address := interpretSimgle(addrText, visitor)
+//		if address.IsNil() || !address.City.IsNil() || !address.District.IsNil() {
+//			numFail++
+//			continue
+//		}
+//		numSuccess++
+//		addresses = append(addresses, address)
+//	}
+//	return addresses
+//}
+//
+//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) AddressEntity {
+//}

@@ -19,7 +19,7 @@ type RegionInterpreterVisitor struct {
 	DeepMostDivision Division
 	CurDivision      Division
 
-	stack []index.TermIndexItem
+	stack []*index.TermIndexItem
 }
 
 func NewRegionInterpreterVisitor(ap AddressPersister) RegionInterpreterVisitor {
@@ -40,7 +40,7 @@ func NewRegionInterpreterVisitor(ap AddressPersister) RegionInterpreterVisitor {
 func (riv RegionInterpreterVisitor) visit(entry index.TermIndexEntry, text string, pos int) bool {
 	// 找到最匹配的 被索引对象
 	acceptableItem := riv.findAcceptableItem(entry, text, pos)
-	if acceptableItem.IsNil() { // 没有匹配对象，匹配不成功，返回
+	if acceptableItem == nil { // 没有匹配对象，匹配不成功，返回
 		return false
 	}
 
@@ -57,7 +57,7 @@ func (riv RegionInterpreterVisitor) visit(entry index.TermIndexEntry, text strin
 }
 
 func (riv RegionInterpreterVisitor) findAcceptableItem(
-	entry index.TermIndexEntry, text string, pos int) index.TermIndexItem {
+	entry index.TermIndexEntry, text string, pos int) *index.TermIndexItem {
 	mostPriority := -1
 	var acceptableItem index.TermIndexItem
 
@@ -79,7 +79,7 @@ loop:
 
 		region := item.Value.(RegionEntity)
 		// 从未匹配上任何一个省市区，则从全部被索引对象中找出一个级别最高的
-		if !riv.CurDivision.Province.IsNil() {
+		if riv.CurDivision.Province != nil {
 			// 在为匹配上任务省市区情况下, 由于 `xx路` 的xx是某县区/市区/省的别名, 如江苏路, 绍兴路等等, 导致错误的匹配。
 			// 如 延安路118号, 错误匹配上了延安县
 			if !isFullMatch(entry, region) && pos+1 <= len(text)-1 { // 使用别名匹配，并且后面还有一个字符
@@ -163,14 +163,14 @@ loop:
 		if mostPriority == -1 || mostPriority > 2 {
 			parent := persister.GetRegion(region.ParentId)
 			// 2.1 缺地级市
-			if riv.CurDivision.City.IsNil() && !riv.CurDivision.Province.IsNil() &&
+			if riv.CurDivision.City == nil && riv.CurDivision.Province != nil &&
 				region.Types == DistrictRegion && riv.CurDivision.Province.Id == parent.ParentId {
 				mostPriority = 2
 				acceptableItem = item
 				continue
 			}
 			// 2.2 缺区县
-			if riv.CurDivision.District.IsNil() && !riv.CurDivision.City.IsNil() &&
+			if riv.CurDivision.District == nil && riv.CurDivision.City != nil &&
 				(region.Types == StreetRegion || region.Types == TownRegion ||
 					region.Types == PlatformL4 || region.Types == VillageRegion) &&
 				riv.CurDivision.City.Id == parent.ParentId {
@@ -182,12 +182,12 @@ loop:
 
 		// 3. 地址中省市区重复出现的情况
 		if mostPriority == -1 || mostPriority > 3 {
-			if !riv.CurDivision.Province.IsNil() && riv.CurDivision.Province.Id == region.Id ||
-				!riv.CurDivision.City.IsNil() && riv.CurDivision.City.Id == region.Id ||
-				!riv.CurDivision.District.IsNil() && riv.CurDivision.District.Id == region.Id ||
-				!riv.CurDivision.Street.IsNil() && riv.CurDivision.Street.Id == region.Id ||
-				!riv.CurDivision.Town.IsNil() && riv.CurDivision.Town.Id == region.Id ||
-				!riv.CurDivision.Village.IsNil() && riv.CurDivision.Village.Id == region.Id {
+			if riv.CurDivision.Province != nil && riv.CurDivision.Province.Id == region.Id ||
+				riv.CurDivision.City != nil && riv.CurDivision.City.Id == region.Id ||
+				riv.CurDivision.District != nil && riv.CurDivision.District.Id == region.Id ||
+				riv.CurDivision.Street != nil && riv.CurDivision.Street.Id == region.Id ||
+				riv.CurDivision.Town != nil && riv.CurDivision.Town.Id == region.Id ||
+				riv.CurDivision.Village != nil && riv.CurDivision.Village.Id == region.Id {
 				mostPriority = 3
 				acceptableItem = item
 				continue
@@ -206,7 +206,7 @@ loop:
 			// 错误匹配方式：新疆 阿克苏地区 阿拉尔市，会导致在【阿克苏地区】下面无法匹配到【阿拉尔市】
 			// 正确匹配结果：新疆 阿拉尔市
 			if region.Types == CityLevelDistrict &&
-				!riv.CurDivision.Province.IsNil() && riv.CurDivision.Province.Id == region.ParentId {
+				riv.CurDivision.Province != nil && riv.CurDivision.Province.Id == region.ParentId {
 				mostPriority = 4
 				acceptableItem = item
 				continue
@@ -215,7 +215,7 @@ loop:
 			// 4.2 地级市-区县从属关系错误，但区县对应的省份正确，则将使用区县的地级市覆盖已匹配的地级市
 			// 主要是地级市的管辖范围有调整，或者由于外部系统地级市与区县对应关系有调整导致
 			if region.Types == DistrictRegion && // 必须是普通区县
-				!riv.CurDivision.City.IsNil() && !riv.CurDivision.Province.IsNil() &&
+				riv.CurDivision.City != nil && riv.CurDivision.Province != nil &&
 				isFullMatch(entry, region) && // 使用的全名匹配
 				riv.CurDivision.City.Id != region.ParentId { // 区县的地级市
 				city := persister.GetRegion(region.ParentId)
@@ -230,10 +230,10 @@ loop:
 		// 5. 街道、乡镇，且不符合上述情况
 		if region.Types == StreetRegion || region.Types == TownRegion ||
 			region.Types == VillageRegion || region.Types == PlatformL4 {
-			if !riv.CurDivision.District.IsNil() {
+			if riv.CurDivision.District != nil {
 				parent := persister.GetRegion(region.ParentId) // parent为区县
 				parent = persister.GetRegion(parent.ParentId)  // parent为地级市
-				if !riv.CurDivision.City.IsNil() && riv.CurDivision.City.Id == parent.Id {
+				if riv.CurDivision.City != nil && riv.CurDivision.City.Id == parent.Id {
 					mostPriority = 5
 					acceptableItem = item
 					continue
@@ -334,48 +334,48 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 	case CityRegion:
 	case ProvinceLevelCity2:
 		riv.CurDivision.City = region
-		if !riv.CurDivision.Province.IsNil() {
+		if riv.CurDivision.Province != nil {
 			riv.CurDivision.Province = persister.GetRegion(region.ParentId)
 		}
 	case CityLevelDistrict:
 		riv.CurDivision.City = region
 		riv.CurDivision.District = region
-		if !riv.CurDivision.Province.IsNil() {
+		if riv.CurDivision.Province != nil {
 			riv.CurDivision.Province = persister.GetRegion(region.ParentId)
 		}
 	case DistrictRegion:
 		riv.CurDivision.District = region
 		// 成功匹配了区县，则强制更新地级市
 		riv.CurDivision.City = persister.GetRegion(riv.CurDivision.District.ParentId)
-		if riv.CurDivision.Province.IsNil() {
+		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentId)
 		}
 	case StreetRegion:
 	case PlatformL4:
-		if riv.CurDivision.Street.IsNil() {
+		if riv.CurDivision.Street == nil {
 			riv.CurDivision.Street = region
 		}
-		if riv.CurDivision.District.IsNil() {
+		if riv.CurDivision.District == nil {
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
 		}
 	case TownRegion:
-		if riv.CurDivision.Town.IsNil() {
+		if riv.CurDivision.Town == nil {
 			riv.CurDivision.Town = region
 		}
-		if riv.CurDivision.District.IsNil() {
+		if riv.CurDivision.District == nil {
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
 		}
 	case VillageRegion:
-		if riv.CurDivision.Village.IsNil() {
+		if riv.CurDivision.Village == nil {
 			riv.CurDivision.Village = region
 		}
-		if riv.CurDivision.District.IsNil() {
+		if riv.CurDivision.District == nil {
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
@@ -390,9 +390,9 @@ func (riv RegionInterpreterVisitor) updateCityAndProvince(distinct RegionEntity)
 	if distinct.IsNil() {
 		return
 	}
-	if riv.CurDivision.City.IsNil() {
+	if riv.CurDivision.City == nil {
 		riv.CurDivision.City = persister.GetRegion(distinct.ParentId)
-		if riv.CurDivision.Province.IsNil() {
+		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentId)
 		}
 	}

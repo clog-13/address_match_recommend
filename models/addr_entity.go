@@ -8,15 +8,12 @@ type AddressEntity struct {
 	RoadNum     string
 	BuildingNum string
 	Hash        int
-	division    Division
+
+	Division
 }
 
-func NewAddrEntity(text string) AddressEntity {
-	return AddressEntity{
+func NewAddrEntity(text string) *AddressEntity {
+	return &AddressEntity{
 		Text: text,
 	}
-}
-
-func (a AddressEntity) IsNil() bool {
-
 }

@@ -3,7 +3,7 @@ package similarity
 import "address_match_recommend/models"
 
 type Query struct {
-	topN      int
+	TopN      int
 	QueryAddr models.AddressEntity
 	QueryDoc  Document
 
@@ -12,28 +12,7 @@ type Query struct {
 
 func NewQuery(topN int) *Query {
 	return &Query{
-		topN: topN,
-	}
-}
-
-// SortSimilarDocs 将相似文档按相似度从高到低排序。
-func (q Query) SortSimilarDocs() {
-	if len(q.SimiDocs) == 0 {
-		return
-	}
-	exchanged := true
-	endIndex := len(q.SimiDocs) - 1
-	for exchanged {
-		exchanged = false
-		for i := 1; i <= endIndex; i++ {
-			if q.SimiDocs[i-1].Similarity < q.SimiDocs[i].Similarity {
-				temp := q.SimiDocs[i-1]
-				q.SimiDocs[i-1] = q.SimiDocs[i]
-				q.SimiDocs[i] = temp
-				exchanged = true
-			}
-		}
-		endIndex--
+		TopN: topN,
 	}
 }
 
@@ -43,14 +22,14 @@ func (q Query) AddSimiDoc(simiDoc SimilarDocument) bool {
 		return false
 	}
 	if q.SimiDocs == nil {
-		q.SimiDocs = make([]SimilarDocument, q.topN)
+		q.SimiDocs = make([]SimilarDocument, q.TopN)
 	}
-	if len(q.SimiDocs) < q.topN {
+	if len(q.SimiDocs) < q.TopN {
 		q.SimiDocs = append(q.SimiDocs, simiDoc)
 		return true
 	}
 	minSimilarityIndex := 0
-	for i := 1; i < q.topN; i++ {
+	for i := 1; i < q.TopN; i++ {
 		if q.SimiDocs[i].Similarity < q.SimiDocs[minSimilarityIndex].Similarity {
 			minSimilarityIndex = i
 		}
@@ -67,7 +46,7 @@ func (q Query) AddSimiDocs(doc Document, similarity float64) bool {
 		return false
 	}
 	if q.SimiDocs == nil {
-		q.SimiDocs = make([]SimilarDocument, q.topN)
+		q.SimiDocs = make([]SimilarDocument, q.TopN)
 		simiDoc := NewSimilarDocument(doc)
 		simiDoc.Similarity = similarity
 		q.SimiDocs = append(q.SimiDocs, simiDoc)

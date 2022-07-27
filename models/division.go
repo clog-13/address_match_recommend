@@ -3,50 +3,47 @@ package models
 type Division struct {
 	Id int64
 
-	Province RegionEntity
-	City     RegionEntity
-	District RegionEntity
-	Street   RegionEntity
-	Town     RegionEntity
-	Village  RegionEntity
+	Province *RegionEntity
+	City     *RegionEntity
+	District *RegionEntity
+	Street   *RegionEntity
+	Town     *RegionEntity
+	Village  *RegionEntity
 }
 
 // LeastRegion 获取最小一级有效行政区域对象
-func (d Division) LeastRegion() RegionEntity {
-	if !d.Village.IsNil() {
+func (d Division) LeastRegion() *RegionEntity {
+	if d.Village != nil {
 		return d.Village
 	}
-	if !d.Town.IsNil() {
+	if d.Town != nil {
 		return d.Town
 	}
-	if !d.Street.IsNil() {
+	if d.Street != nil {
 		return d.Street
 	}
-	if !d.District.IsNil() {
+	if d.District != nil {
 		return d.District
 	}
-	if !d.City.IsNil() {
+	if d.City != nil {
 		return d.City
 	}
 	return d.Province
 }
 
-func (d Division) GetTown() RegionEntity {
-	if !d.Town.IsNil() {
+func (d Division) GetTown() *RegionEntity {
+	if d.Town != nil {
 		return d.Town
 	}
-	if d.Street.IsNil() {
-		return RegionEntity{}
-	}
-	if d.Street.IsTown() {
+	if d.Street != nil && d.Street.IsTown() {
 		return d.Street
 	}
-	return RegionEntity{}
+	return nil
 }
 
-func (d Division) SetTown(value RegionEntity) {
-	if value.IsNil() {
-		d.Town = value
+func (d Division) SetTown(value *RegionEntity) {
+	if value == nil {
+		d.Town = nil
 		return
 	}
 	switch value.Types {
@@ -56,6 +53,6 @@ func (d Division) SetTown(value RegionEntity) {
 	case PlatformL4:
 		d.Street = value
 	default:
-		d.Town = RegionEntity{}
+		d.Town = nil
 	}
 }

@@ -6,13 +6,13 @@ import (
 
 type Term struct {
 	Text  string
-	Types byte
+	Types TermEnum
 	Idf   float64
 	Ref   *Term
 }
 
-func NewTerm(types byte, text string) Term {
-	return Term{
+func NewTerm(types TermEnum, text string) *Term {
+	return &Term{
 		Types: types,
 		Text:  text,
 	}
@@ -30,6 +30,6 @@ func (t Term) GetIdf() float64 {
 	return t.Idf
 }
 
-func (t Term) IsNil() bool {
+func (t Term) Equals(a *Term) bool {
 
 }

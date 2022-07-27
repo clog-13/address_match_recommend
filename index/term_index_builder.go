@@ -14,17 +14,17 @@ type TermIndexBuilder struct {
 
 func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []string) TermIndexBuilder {
 	newTib := TermIndexBuilder{}
-	newTib.indexRegions(persister.RootRegion().Children)
+	newTib.indexRegions(persister.GetRootRegionChilden())
 	newTib.indexIgnoring(ingoringRegionNames)
 	return newTib
 }
 
 // 为行政区划建立倒排索引
-func (tib TermIndexBuilder) indexRegions(regions []RegionEntity) {
-	if len(regions) == 0 {
+func (tib TermIndexBuilder) indexRegions(regions *[]*RegionEntity) {
+	if len(*regions) == 0 {
 		return
 	}
-	for _, region := range regions {
+	for _, region := range *regions {
 		tii := NewTermIndexItem(convertRegionType(region), region)
 		for _, name := range region.OrderedNameAndAlias() {
 			tib.indexRoot.BuildIndex(name, 0, tii)
@@ -65,7 +65,7 @@ func (tib TermIndexBuilder) indexRegions(regions []RegionEntity) {
 		}
 		// 递归
 		if region.Children != nil {
-			tib.indexRegions(region.Children)
+			tib.indexRegions(&region.Children)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func (tib TermIndexBuilder) indexIgnoring(ignoreList []string) {
 	}
 }
 
-func convertRegionType(region RegionEntity) TermEnum {
+func convertRegionType(region *RegionEntity) TermEnum {
 	switch region.Types {
 	case ProvinceRegion:
 	case ProvinceLevelCity1:

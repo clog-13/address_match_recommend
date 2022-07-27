@@ -15,7 +15,3 @@ func NewTermIndexItem(t models.TermEnum, v any) TermIndexItem {
 		Value: v,
 	}
 }
-
-func (tii TermIndexItem) IsNil() bool {
-
-}
