@@ -1,13 +1,15 @@
 package index
 
-import "address_match_recommend/enum"
+import (
+	"address_match_recommend/models"
+)
 
 type TermIndexItem struct {
-	Types enum.Enum
+	Types models.Enum
 	Value any
 }
 
-func NewTermIndexItem(t enum.Enum, v any) TermIndexItem {
+func NewTermIndexItem(t models.Enum, v any) TermIndexItem {
 	return TermIndexItem{
 		Types: t,
 		Value: v,

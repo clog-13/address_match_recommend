@@ -1,4 +1,4 @@
-package model
+package core
 
 type iSegmenter interface {
 	Segment(text string) []string

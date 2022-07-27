@@ -1,8 +1,8 @@
 package main
 
 import (
-	"address_match_recommend/common"
 	"address_match_recommend/model"
+	"address_match_recommend/util"
 	"fmt"
 	"gorm.io/gorm"
 	"strings"
@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	bloom = common.NewCountingBloomFilter(totalNumber, falseDetectRate)
+	bloom = util.NewCountingBloomFilter(totalNumber, falseDetectRate)
 )
 
 func AddrApi(addrStr string) string {

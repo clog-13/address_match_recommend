@@ -1,7 +1,7 @@
 package main
 
 import (
-	"address_match_recommend/similarity"
+	"address_match_recommend/core"
 	"fmt"
 	"strings"
 )
@@ -20,7 +20,7 @@ func main() {
 	fmt.Scanln("输入具体地址: ", &inputAddr)
 	inputAddr.WriteString(tmp)
 
-	result := similarity.FindsimilarAddress(inputAddr.String(), 5, false)
+	result := core.FindsimilarAddress(inputAddr.String(), 5, false)
 	//addr := AddrApi(inputAddr.String())
 
 	fmt.Println("用户最终收货地址：", result.SimiDocs)

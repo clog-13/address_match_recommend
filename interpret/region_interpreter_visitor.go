@@ -1,9 +1,9 @@
 package interpret
 
 import (
-	"address_match_recommend/enum"
 	"address_match_recommend/index"
 	"address_match_recommend/model"
+	"address_match_recommend/models"
 	"address_match_recommend/persist"
 )
 
@@ -30,8 +30,8 @@ func NewRegionInterpreterVisitor(ap persist.AddressPersister) RegionInterpreterV
 
 func loadRegionChildren(parent model.RegionEntity) {
 	//已经到最底层，结束
-	if parent.IsNil() || parent.Types==enum.StreetRegion || parent.Types==enum.VillageRegion ||
-		parent.Types==enum.PlatformL4||parent.Types==enum.TownRegion {
+	if parent.IsNil() || parent.Types== models.StreetRegion || parent.Types== models.VillageRegion ||
+		parent.Types== models.PlatformL4 ||parent.Types== models.TownRegion {
 		return
 	}
 	//递归加载下一级

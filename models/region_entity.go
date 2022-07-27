@@ -1,7 +1,6 @@
-package model
+package models
 
 import (
-	"address_match_recommend/enum"
 	"strings"
 )
 
@@ -27,9 +26,9 @@ func (r RegionEntity) IsNil() bool {
 
 func (r RegionEntity) IsTown() bool {
 	switch r.Types {
-	case enum.Country:
+	case CountryRegion:
 		return true
-	case enum.StreetRegion:
+	case StreetRegion:
 		if r.Name == "" {
 			return false
 		}

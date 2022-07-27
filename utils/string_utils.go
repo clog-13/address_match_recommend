@@ -1,4 +1,4 @@
-package common
+package utils
 
 func IsAnsiChars(text string) bool {
 	if len(text) == 0 {

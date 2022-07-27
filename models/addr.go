@@ -1,4 +1,4 @@
-package model
+package models
 
 type DeliveryAddr struct {
 	Id uint `gorm:"primaryKey;comment:'用户ID'" json:"Id"`

@@ -1,6 +1,8 @@
 package index
 
-import "address_match_recommend/common"
+import (
+	"address_match_recommend/util"
+)
 
 type TermIndexEntry struct {
 	Key      string
@@ -18,7 +20,7 @@ func (tie TermIndexEntry) buildIndex(text string, pos int, item TermIndexItem) {
 		entry, ok := tie.Children[c]
 		if !ok {
 			entry = TermIndexEntry{
-				Key:      common.Head(text, pos+1),
+				Key:      util.Head(text, pos+1),
 				Children: map[byte]TermIndexEntry{c: entry},
 			}
 		}

@@ -1,4 +1,4 @@
-package model
+package similarity
 
 type SimilarDocument struct {
 	Doc          Document

@@ -1,10 +1,11 @@
-package similarity
+package core
 
 import (
-	"address_match_recommend/common"
-	"address_match_recommend/enum"
 	"address_match_recommend/interpret"
-	. "address_match_recommend/model"
+	"address_match_recommend/model"
+	"address_match_recommend/models"
+	"address_match_recommend/similarity"
+	"address_match_recommend/util"
 	"math"
 	"strconv"
 )
@@ -21,11 +22,11 @@ var (
 	MissingIdf = 4.0
 
 	interpreter interpret.AddressInterpreter
-	segmenter   = new(SimpleSegmenter)
+	segmenter   = new(model.SimpleSegmenter)
 	cacheFolder string
 
 	CacheVectorsInMemory = false
-	VectorsCache         = make(map[string][]Document)
+	VectorsCache         = make(map[string][]similarity.Document)
 	IdfCache             = make(map[string]map[string]float64)
 )
 
@@ -38,8 +39,8 @@ TF-IDF: 词条的特征值，TF-IDF = TF * IDF。
 
 // FindsimilarAddress 搜索相似地址
 // addressText: 详细地址文本，开头部分必须包含省、市、区
-func FindsimilarAddress(addressText string, topN int, explain bool) *Query {
-	query := NewQuery(topN)
+func FindsimilarAddress(addressText string, topN int, explain bool) *similarity.Query {
+	query := similarity.NewQuery(topN)
 
 	// 解析地址
 	queryAddr := interpreter.Interpret(addressText)
@@ -68,33 +69,33 @@ func FindsimilarAddress(addressText string, topN int, explain bool) *Query {
 }
 
 // 分词，设置词条权重
-func analyse(addr AddressEntity) Document {
-	doc := NewDocument(addr.Id)
+func analyse(addr model.AddressEntity) similarity.Document {
+	doc := similarity.NewDocument()
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
 	tokens := make([]string, 0)
 	if len(addr.Text) > 0 {
 		tokens = segmenter.Segment(addr.Text)
 	}
-	terms := make([]Term, 0) // TODO 预分配空间
+	terms := make([]similarity.Term, 0) // TODO 预分配空间
 
 	// TODO isNil
 
 	//2. 生成term
 	if !addr.Town.IsNil() {
-		doc.Town = NewTerm(enum.TownTerm, addr.Town.Name)
+		doc.Town = similarity.NewTerm(models.TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
 	if !addr.Village.IsNil() {
-		doc.Village = NewTerm(enum.VillageTerm, addr.Village.Name)
+		doc.Village = similarity.NewTerm(models.VillageTerm, addr.Village.Name)
 		terms = append(terms, doc.Village)
 	}
 	if len(addr.Road) > 0 {
-		doc.Road = NewTerm(enum.Road, addr.Road)
+		doc.Road = similarity.NewTerm(models.RoadTerm, addr.Road)
 		terms = append(terms, doc.Road)
 	}
 	if len(addr.RoadNum) > 0 {
-		roadNumTerm := NewTerm(enum.RoadNum, addr.RoadNum)
+		roadNumTerm := similarity.NewTerm(models.RoadNumTerm, addr.RoadNum)
 		doc.RoadNum = roadNumTerm
 		doc.RoadNumValue = translateRoadNum(addr.RoadNum)
 		roadNumTerm.Ref = &doc.Road
@@ -103,7 +104,7 @@ func analyse(addr AddressEntity) Document {
 
 	// 地址文本分词后的token
 	for _, v := range tokens {
-		addTerm(v, enum.Text, terms)
+		addTerm(v, models.TextTerm, terms)
 	}
 
 	idfs, ok := IdfCache[buildCacheKey(addr)]
@@ -124,7 +125,7 @@ func analyse(addr AddressEntity) Document {
 
 // 为所有文档的全部词条统计逆向引用情况, 返回 全部词条的逆向引用情况
 // key：词条, value：该词条在多少个文档中出现过
-func statInverseDocRefers(docs []Document) map[string]int {
+func statInverseDocRefers(docs []similarity.Document) map[string]int {
 	idrc := make(map[string]int)
 	if docs == nil {
 		return idrc
@@ -148,9 +149,9 @@ func statInverseDocRefers(docs []Document) map[string]int {
 	return idrc
 }
 
-func generateIDFCacheEntryKey(term Term) string {
+func generateIDFCacheEntryKey(term similarity.Term) string {
 	key := term.Text
-	if enum.RoadNum == term.Types {
+	if models.RoadNumTerm == term.Types {
 		num := translateRoadNum(key)
 		if term.Ref == nil {
 			key = ""
@@ -171,7 +172,7 @@ func generateIDFCacheEntryKey(term Term) string {
  * @param dterm 地址库文档词条。
  * @return
  */
-func getBoostValue(forDoc bool, qdoc Document, qterm Term, ddoc Document, dterm Term) float64 {
+func getBoostValue(forDoc bool, qdoc similarity.Document, qterm similarity.Term, ddoc similarity.Document, dterm similarity.Term) float64 {
 	value := BoostM
 	var types byte
 	if forDoc {
@@ -180,18 +181,18 @@ func getBoostValue(forDoc bool, qdoc Document, qterm Term, ddoc Document, dterm 
 		types = qterm.Types
 	}
 	switch types {
-	case enum.ProvinceTerm:
-	case enum.CityTerm:
-	case enum.DistrictTerm:
+	case models.ProvinceTerm:
+	case models.CityTerm:
+	case models.DistrictTerm:
 		value = BoostXl // 省市区、道路出现频次高，IDF值较低，但重要程度最高，因此给予比较高的加权权重
-	case enum.StreetTerm:
+	case models.StreetTerm:
 		value = BoostXs //一般人对于城市街道范围概念不强，在地址中随意选择街道的可能性较高，因此降权处理
-	case enum.Text:
+	case models.TextTerm:
 		value = BoostM
-	case enum.TownTerm:
-	case enum.VillageTerm:
+	case models.TownTerm:
+	case models.VillageTerm:
 		value = BoostXs
-		if enum.TownTerm == types { //乡镇
+		if models.TownTerm == types { //乡镇
 			//查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
 			//  乡镇相同：查询文档和地址库文档都加权BOOST_L，提高相似度
 			//  乡镇不同：只有查询文档的词条加权BOOST_L，地址库文档的词条因无法匹配不会进入该函数。结果是拉开相似度的差异
@@ -217,10 +218,10 @@ func getBoostValue(forDoc bool, qdoc Document, qterm Term, ddoc Document, dterm 
 				}
 			}
 		}
-	case enum.Road:
-	case enum.RoadNum:
+	case models.RoadTerm:
+	case models.RoadNumTerm:
 		if qdoc.Town.IsNil() || qdoc.Village.IsNil() { // 有乡镇有村庄，不再考虑道路、门牌号的加权
-			if enum.Road == types { //道路
+			if models.RoadTerm == types { //道路
 				if !qdoc.Road.IsNil() && !ddoc.Road.IsNil() {
 					value = BoostL
 				}
@@ -348,9 +349,9 @@ func translateRoadNum(text string) int {
 	return 0
 }
 
-func addTerm(text string, types byte, terms []Term) Term {
+func addTerm(text string, types byte, terms []similarity.Term) similarity.Term {
 	if len(text) == 0 {
-		return Term{}
+		return similarity.Term{}
 	}
 	termText := text
 	for _, v := range terms {
@@ -358,17 +359,17 @@ func addTerm(text string, types byte, terms []Term) Term {
 			return v
 		}
 	}
-	newTerm := NewTerm(types, termText)
+	newTerm := similarity.NewTerm(types, termText)
 	terms = append(terms, newTerm)
 	return newTerm
 }
 
-func loadDocunentsFromCache(address AddressEntity) []Document {
+func loadDocunentsFromCache(address AddressEntity) []similarity.Document {
 	cacheKey := buildCacheKey(address)
 	if len(cacheKey) == 0 {
 		return nil
 	}
-	docs := make([]Document, 0)
+	docs := make([]similarity.Document, 0)
 	if !CacheVectorsInMemory { // 从文件读取
 		docs = loadDocumentsFromDatabase(cacheKey)
 		return docs
@@ -380,7 +381,7 @@ func loadDocunentsFromCache(address AddressEntity) []Document {
 			if docs == nil {
 				docs = loadDocumentsFromDatabase(cacheKey)
 				if docs == nil {
-					docs = make([]Document, 0)
+					docs = make([]similarity.Document, 0)
 					VectorsCache[cacheKey] = docs
 				}
 			}
@@ -395,7 +396,7 @@ func loadDocunentsFromCache(address AddressEntity) []Document {
 					idfs = make(map[string]float64, len(termReferences))
 					for k, v := range termReferences {
 						idf := 0.0
-						if common.IsAnsiChars(k) || common.IsNumericChars(k) {
+						if util.IsAnsiChars(k) || util.IsNumericChars(k) {
 							idf = 2.0
 						} else {
 							idf = math.Log(float64(len(docs) / (v + 1)))
@@ -432,25 +433,25 @@ func loadDocunentsFromCache(address AddressEntity) []Document {
 }
 
 // TODO
-func loadDocumentsFromDatabase(key string) []Document {
-	docs := make([]Document, 0)
+func loadDocumentsFromDatabase(key string) []similarity.Document {
+	docs := make([]similarity.Document, 0)
 
 	return docs
 }
 
-func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) float64 {
-	var dterm Term
+func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN int, explain bool) float64 {
+	var dterm similarity.Term
 	// Text类型词条匹配情况
 	qTextTermCount := 0                                    // 查询文档Text类型词条数量
 	dTextTermMatchCount, matchStart, matchEnd := 0, -1, -1 // 地址库文档匹配上的Text词条数量
 	for _, v := range query.QueryDoc.Terms {
-		if v.Types != enum.Text { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+		if v.Types != models.TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
 			continue
 		}
 		qTextTermCount++
 		for i := 0; i < len(doc.Terms); i++ {
 			term := doc.Terms[i]
-			if term.Types != enum.Text { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+			if term.Types != models.TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
 				continue
 			}
 			if term.Text == v.Text {
@@ -490,45 +491,45 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	if qTextTermCount >= 2 && dTextTermMatchCount >= 2 {
 		textTermDensity = math.Sqrt(float64(dTextTermMatchCount/(matchEnd-matchStart+1)))*0.5 + 0.5
 	}
-	var simiDoc SimilarDocument
+	var simiDoc similarity.SimilarDocument
 	if explain && topN > 1 {
-		simiDoc = NewSimilarDocument(doc)
+		simiDoc = similarity.NewSimilarDocument(doc)
 	}
 
 	// 计算TF-IDF和相似度的中间值
 	var sumQD, sumQQ, sumDD, qtfidf, dtfidf float64 = 0, 0, 0, 0, 0
 	var dboost, qboost float64 = 0, 0
 	for _, v := range query.QueryDoc.Terms {
-		qboost = getBoostValue(false, query.QueryDoc, v, doc, Term{})
+		qboost = getBoostValue(false, query.QueryDoc, v, doc, similarity.Term{})
 		qtfidf = v.Idf * qboost
 		dterm = doc.GetTerm(v.Text)
-		if dterm == (Term{}) && enum.RoadNum == v.Types {
-			if doc.RoadNum != (Term{}) && doc.Road != (Term{}) && &doc.Road == v.Ref {
+		if dterm == (similarity.Term{}) && models.RoadNumTerm == v.Types {
+			if doc.RoadNum != (similarity.Term{}) && doc.Road != (similarity.Term{}) && &doc.Road == v.Ref {
 				dterm = doc.RoadNum
 			}
 		}
-		if dterm == (Term{}) {
+		if dterm == (similarity.Term{}) {
 			dboost = 0
 		} else {
 			dboost = getBoostValue(true, query.QueryDoc, v, doc, dterm)
 		}
 		coord, density := float64(1), float64(1)
-		if dterm != (Term{}) && enum.Text == dterm.Types {
+		if dterm != (similarity.Term{}) && models.TextTerm == dterm.Types {
 			coord = textTermCoord
 			density = textTermDensity
 		}
-		if dterm != (Term{}) {
+		if dterm != (similarity.Term{}) {
 			dtfidf = dterm.Idf
 		} else {
 			dtfidf = v.Idf
 		}
 		dtfidf *= dboost * coord * density
 
-		if explain && topN > 1 && dterm != (Term{}) {
-			mt := new(MatchedTerm)
+		if explain && topN > 1 && dterm != (similarity.Term{}) {
+			mt := new(similarity.MatchedTerm)
 			mt.Boost = dboost
 			mt.Tfidf = dtfidf
-			if dterm.Types == enum.Text {
+			if dterm.Types == models.TextTerm {
 				mt.Density = density
 				mt.Coord = coord
 			} else {

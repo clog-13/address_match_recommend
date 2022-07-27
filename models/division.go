@@ -1,4 +1,4 @@
-package model
+package models
 
 type Division struct {
 	Province RegionEntity

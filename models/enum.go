@@ -1,4 +1,4 @@
-package enum
+package models
 
 type Enum byte
 
@@ -10,13 +10,13 @@ const (
 	StreetTerm    = '4'
 	TownTerm      = 'T'
 	VillageTerm   = 'V'
-	Road          = 'R'
-	RoadNum       = 'N'
-	Text          = 'X'
-	Ignore        = 'I'
+	RoadTerm      = 'R'
+	RoadNumTerm   = 'N'
+	TextTerm      = 'X'
+	IgnoreTerm    = 'I'
 
 	UndefinedRegion    = 0
-	Country            = 10
+	CountryRegion      = 10
 	ProvinceRegion     = 100
 	ProvinceLevelCity1 = 150
 	ProvinceLevelCity2 = 151
