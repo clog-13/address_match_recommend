@@ -4,13 +4,10 @@ import (
 	"strings"
 )
 
-const ()
-
 // RegionEntity 行政区域实体
 type RegionEntity struct {
-	SerialVersionUID int64 // -111163973997033386L
+	Id int64
 
-	Id           int64
 	ParentId     int64
 	Name         string
 	Alias        string

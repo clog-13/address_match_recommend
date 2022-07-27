@@ -1,6 +1,8 @@
 package models
 
 type Division struct {
+	Id int64
+
 	Province RegionEntity
 	City     RegionEntity
 	District RegionEntity

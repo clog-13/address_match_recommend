@@ -30,6 +30,7 @@ func (ap AddressPersister) loadRegions() {
 
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region` where id=1
 	ap.RegionTree = RegionEntity{}
+
 	ap.RegionCache = make(map[int64]RegionEntity)
 	ap.RegionCache[ap.RegionTree.Id] = ap.RegionTree
 	ap.loadRegionChildren(ap.RegionTree)
@@ -42,13 +43,15 @@ func (ap AddressPersister) loadRegionChildren(parent RegionEntity) {
 		parent.Types == PlatformL4 || parent.Types == TownRegion {
 		return
 	}
-	// 递归加载下一级
+
 	// parent.Id
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip`
 	// from `bas_region`
 	// where parent_id=#{pid}
 	// order by id
 	children := make([]RegionEntity, 0)
+
+	// 递归加载下一级
 	if children != nil && len(children) > 0 {
 		parent.Children = children
 		for _, child := range children {

@@ -22,7 +22,6 @@ var (
 
 	interpreter AddressInterpreter
 	segmenter   = new(segment.SimpleSegmenter)
-	cacheFolder string
 
 	CacheVectorsInMemory = false
 	VectorsCache         = make(map[string][]similarity.Document)
@@ -51,11 +50,12 @@ func FindsimilarAddress(addressText string, topN int, explain bool) *similarity.
 
 	// 从文件缓存或内存缓存获取所有文档(地址库)
 	allDocs := loadDocunentsFromCache(queryAddr)
+
 	// 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
-	var similarity float64
+	var s float64
 	for _, v := range allDocs {
-		similarity = computeDocSimilarity(query, v, topN, explain)
-		if topN == 1 && similarity == 1 {
+		s = computeDocSimilarity(query, v, topN, explain)
+		if topN == 1 && s == 1 {
 			break
 		}
 	}
@@ -433,9 +433,6 @@ func loadDocunentsFromCache(address AddressEntity) []similarity.Document {
 
 // TODO
 func loadDocumentsFromDatabase(key string) []similarity.Document {
-	docs := make([]similarity.Document, 0)
-
-	return docs
 }
 
 func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN int, explain bool) float64 {
@@ -544,14 +541,14 @@ func computeDocSimilarity(query *similarity.Query, doc similarity.Document, topN
 	if sumDD == 0 || sumQQ == 0 {
 		return 0
 	}
-	similarity := sumQD / (math.Sqrt(sumQQ * sumDD))
+	s := sumQD / (math.Sqrt(sumQQ * sumDD))
 	if explain && topN > 1 {
-		simiDoc.Similarity = similarity
+		simiDoc.Similarity = s
 		query.AddSimiDoc(simiDoc)
 	} else {
-		query.AddSimiDocs(doc, similarity)
+		query.AddSimiDocs(doc, s)
 	}
-	return similarity
+	return s
 }
 
 func buildCacheKey(address AddressEntity) string {
