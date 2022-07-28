@@ -1,14 +1,22 @@
 package models
 
+// Division 行政区域集合
 type Division struct {
-	Id int64
+	Id int64 `gorm:"primaryKey;comment:行政区规范ID" json:"ID"`
 
+	//ProvinceId uint
+	// `gorm:"foreignKey:division_id"`
 	Province *RegionEntity
-	City     *RegionEntity
+	//CityId     uint
+	City *RegionEntity
+	//DistrictId uint
 	District *RegionEntity
-	Street   *RegionEntity
-	Town     *RegionEntity
-	Village  *RegionEntity
+	//StreetId   uint
+	Street *RegionEntity
+	//TownId     uint
+	Town *RegionEntity
+	//VillageId  uint
+	Village *RegionEntity
 }
 
 // LeastRegion 获取最小一级有效行政区域对象
@@ -55,4 +63,8 @@ func (d Division) SetTown(value *RegionEntity) {
 	default:
 		d.Town = nil
 	}
+}
+
+func (d Division) TableName() string {
+	return "division"
 }

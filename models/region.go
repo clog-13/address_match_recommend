@@ -1,20 +1,22 @@
 package models
 
 import (
+	"github.com/lib/pq"
 	"strings"
 )
 
 // RegionEntity 行政区域实体
 type RegionEntity struct {
-	Id int64
+	ID uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 
-	ParentId     int64
-	Name         string
-	Alias        string
-	Types        int // RegionType enum
-	Zip          string
-	Children     []*RegionEntity
-	OrderedNames []string
+	Name  string     `gorm:"type:string;comment:区域名称" json:"region_name"`
+	Alias string     `gorm:"type:string;comment:区域别名" json:"region_alias"`
+	Types RegionEnum `gorm:"type:uint;comment:区域类型" json:"region_types"`
+
+	DivisionID   uint
+	ParentID     uint            `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
+	Children     []*RegionEntity `gorm:"foreignkey:ParentID;references:id" json:"region_children"`
+	OrderedNames pq.StringArray  `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
 }
 
 func (r RegionEntity) IsTown() bool {
@@ -80,6 +82,10 @@ func (r RegionEntity) buildOrderedNameAndAlias() {
 }
 
 func (r *RegionEntity) Equal(t *RegionEntity) bool {
-	return r.ParentId == t.ParentId && r.Name == t.Name && r.Alias == t.Alias &&
-		r.Types == t.Types && r.Zip == t.Zip
+	return r.ParentID == t.ParentID && r.Name == t.Name && r.Alias == t.Alias &&
+		r.Types == t.Types
+}
+
+func (r *RegionEntity) TableName() string {
+	return "region"
 }

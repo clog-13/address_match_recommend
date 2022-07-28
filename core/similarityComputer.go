@@ -43,31 +43,30 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 		return Query{}
 	}
 
-	// 解析地址
 	queryAddr := AddressEntity{AddressText: addressText}
-	interpreter.Interpret(&queryAddr)
+	interpreter.Interpret(&queryAddr) // 解析地址
+	queryDoc := analyse(&queryAddr)   // 为词条计算特征值
 
-	// 为词条计算特征值
-	queryDoc := analyse(&queryAddr)
-	query := Query{TopN: topN}
-	query.QueryAddr = queryAddr
-	query.QueryDoc = queryDoc
+	query := Query{ // 生成查询对象
+		TopN:      topN,
+		QueryAddr: queryAddr,
+		QueryDoc:  queryDoc,
+	}
 
 	// 从文件缓存或内存缓存获取所有文档(地址库)
 	allDocs := loadDocunentsFromCache(&queryAddr)
-
-	// 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
-	var s float64
-	for _, v := range allDocs {
-		s = computeDocSimilarity(&query, v, topN, explain)
-		if topN == 1 && s == 1 {
-			break
+	eqCnt := 0
+	for _, doc := range allDocs { // 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
+		if 1 == computeDocSimilarity(&query, doc, topN, explain) {
+			eqCnt++
+			if topN == eqCnt { // 提前返回
+				break
+			}
 		}
 	}
 
-	// 按相似度从高到低排序
 	if topN > 1 {
-		SortSimilarDocs(&query)
+		SortSimilarDocs(&query) // 按相似度从高到低排序
 	}
 	return query
 }
@@ -388,7 +387,9 @@ func loadDocunentsFromCache(address *AddressEntity) []Document {
 	} else { // 从内存读取，如果未缓存到内存，则从文件加载到内存中
 		docs = VectorsCache[cacheKey]
 		if docs == nil {
+
 			// TODO
+
 			docs = VectorsCache[cacheKey]
 			if docs == nil {
 				docs = loadDocumentsFromDatabase(cacheKey)
@@ -444,8 +445,8 @@ func loadDocunentsFromCache(address *AddressEntity) []Document {
 	return docs
 }
 
-// TODO
 func loadDocumentsFromDatabase(key string) []Document {
+
 }
 
 func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) float64 {
@@ -569,9 +570,9 @@ func buildCacheKey(address *AddressEntity) string {
 		return ""
 	}
 
-	res := strconv.Itoa(int(address.Div.Province.Id)) + "-" + strconv.Itoa(int(address.Div.City.Id))
+	res := strconv.Itoa(int(address.Div.Province.ID)) + "-" + strconv.Itoa(int(address.Div.City.ID))
 	if address.Div.City.Children != nil {
-		res += "-" + strconv.Itoa(int(address.Div.District.Id))
+		res += "-" + strconv.Itoa(int(address.Div.District.ID))
 	}
 	return res
 }

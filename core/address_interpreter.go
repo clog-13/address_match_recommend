@@ -38,7 +38,7 @@ var (
 	P_BUILDING_NUM_V = regexp.MustCompile(`(栋|幢|橦|号楼|号|\\#|\\#楼|单元|室|房|门)+`)
 
 	// 匹配building的模式：12-2-302，12栋3单元302
-	P_BUILDING_NUM2 = regexp.MustCompile(`[A-Za-z0-9]+([\\#\\-一－/\\\\]+[A-Za-z0-9]+)+`)
+	P_BUILDING_NUM2 = regexp.MustCompile(`[A-Za-z\d]+([\\#\\-一－/\\\\]+[A-Za-z\d]+)+`)
 
 	// 匹配building的模式：10组21号，农村地址
 	P_BUILDING_NUM3 = regexp.MustCompile(`[0-9]+(组|通道)[A-Z0-9\\-一]+号?`)
@@ -52,7 +52,7 @@ var (
 	P_ROAD_BUILDING = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
 
 	// 村信息
-	P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2,2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
+	P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
 	P_TOWN2 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{1,3}镇)?(?P<x>[\u4e00-\u9fa5]{1,3}乡)?(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?)`)
 	P_TOWN3 = regexp.MustCompile(`^(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?`)
 
@@ -60,17 +60,14 @@ var (
 	invalidTownFollowings = make(map[string]struct{})
 )
 
-func init() {
-
-}
-
 type AddressInterpreter struct {
 	indexBuilder index.TermIndexBuilder
 }
 
-func NewAddressInterpreter(persister AddressPersister, visitor TermIndexVisitor) {
-	newAi := AddressInterpreter{}
-	newAi.indexBuilder = index.NewTermIndexBuilder(persister, ignoringRegionNames)
+func NewAddressInterpreter(persister AddressPersister, visitor TermIndexVisitor) *AddressInterpreter {
+	return &AddressInterpreter{
+		indexBuilder: index.NewTermIndexBuilder(persister, ignoringRegionNames),
+	}
 }
 
 // Interpret 将地址进行标准化处理, 解析成 AddressEntity
@@ -93,6 +90,7 @@ func (ai AddressInterpreter) interpret(entity *AddressEntity, visitor RegionInte
 	//// 去除包括的特殊字符
 	//brackets = brackets.remove(specialChars2)
 	//removeBrackets(entity)
+
 	//// 提取行政规划标准地址
 	//extractRegion(entity, visitor)
 	//// 规整省市区街道等匹配的结果
