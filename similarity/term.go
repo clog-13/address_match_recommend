@@ -4,6 +4,7 @@ import (
 	. "address_match_recommend/models"
 )
 
+// Term 词条
 type Term struct {
 	Text  string
 	Types TermEnum
@@ -18,7 +19,7 @@ func NewTerm(types TermEnum, text string) *Term {
 	}
 }
 
-func (t Term) GetIdf() float64 {
+func (t *Term) GetIdf() float64 {
 	switch t.Types {
 	case ProvinceTerm:
 	case CityTerm:
@@ -30,6 +31,6 @@ func (t Term) GetIdf() float64 {
 	return t.Idf
 }
 
-func (t Term) Equals(a *Term) bool {
-
+func (t *Term) Equals(a *Term) bool {
+	return t.Text == a.Text && t.Types == a.Types && t.Idf == a.Idf
 }

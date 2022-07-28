@@ -115,7 +115,7 @@ func (ai AddressInterpreter) interpret(entity *AddressEntity, visitor RegionInte
 
 // 清洗下开头垃圾数据
 func (ai AddressInterpreter) prepare(entity *AddressEntity) {
-	if len(entity.Text) == 0 {
+	if len(entity.AddressText) == 0 {
 		return
 	}
 	// 去除开头的数字, 字母, 空格等
@@ -133,7 +133,7 @@ func (ai AddressInterpreter) prepare(entity *AddressEntity) {
 
 // 提取建筑物号
 func (ai AddressInterpreter) extractBuildingNum(entity *AddressEntity) bool {
-	if len(entity.Text) == 0 {
+	if len(entity.AddressText) == 0 {
 		return false
 	}
 	found := false // 是否找到的标志

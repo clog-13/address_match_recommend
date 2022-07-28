@@ -7,7 +7,7 @@ type Query struct {
 	QueryAddr models.AddressEntity
 	QueryDoc  Document
 
-	SimiDocs []SimilarDocument
+	SimiDocs []*SimilarDocument
 }
 
 func NewQuery(topN int) *Query {
@@ -17,12 +17,12 @@ func NewQuery(topN int) *Query {
 }
 
 // AddSimiDoc 添加一个相似文档, 只保留相似度最高的top N条相似文档,相似度最低的从simiDocs中删除
-func (q Query) AddSimiDoc(simiDoc SimilarDocument) bool {
+func (q Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
 	if simiDoc.Similarity <= 0 {
 		return false
 	}
 	if q.SimiDocs == nil {
-		q.SimiDocs = make([]SimilarDocument, q.TopN)
+		q.SimiDocs = make([]*SimilarDocument, q.TopN)
 	}
 	if len(q.SimiDocs) < q.TopN {
 		q.SimiDocs = append(q.SimiDocs, simiDoc)
@@ -46,7 +46,7 @@ func (q Query) AddSimiDocs(doc Document, similarity float64) bool {
 		return false
 	}
 	if q.SimiDocs == nil {
-		q.SimiDocs = make([]SimilarDocument, q.TopN)
+		q.SimiDocs = make([]*SimilarDocument, q.TopN)
 		simiDoc := NewSimilarDocument(doc)
 		simiDoc.Similarity = similarity
 		q.SimiDocs = append(q.SimiDocs, simiDoc)
@@ -58,11 +58,4 @@ func (q Query) AddSimiDocs(doc Document, similarity float64) bool {
 	simiDoc.Similarity = similarity
 	q.SimiDocs[0] = simiDoc
 	return true
-}
-
-func (q Query) GetSimilarDoce() []SimilarDocument {
-	if q.SimiDocs == nil {
-		q.SimiDocs = make([]SimilarDocument, 0)
-	}
-	return q.SimiDocs
 }

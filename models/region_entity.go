@@ -79,5 +79,7 @@ func (r RegionEntity) buildOrderedNameAndAlias() {
 	}
 }
 
-func (r RegionEntity) Equal(t RegionEntity) bool {
+func (r *RegionEntity) Equal(t *RegionEntity) bool {
+	return r.ParentId == t.ParentId && r.Name == t.Name && r.Alias == t.Alias &&
+		r.Types == t.Types && r.Zip == t.Zip
 }

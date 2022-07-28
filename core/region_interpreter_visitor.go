@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// RegionInterpreterVisitor 基于倒排索引搜索匹配 省市区行政区划的访问者
 type RegionInterpreterVisitor struct {
 	IsDebug        bool
 	AmbiguousChars map[string]struct{}
@@ -37,7 +38,7 @@ func NewRegionInterpreterVisitor(ap AddressPersister) RegionInterpreterVisitor {
 	return newRiv
 }
 
-func (riv RegionInterpreterVisitor) visit(entry index.TermIndexEntry, text string, pos int) bool {
+func (riv *RegionInterpreterVisitor) visit(entry *index.TermIndexEntry, text string, pos int) bool {
 	// 找到最匹配的 被索引对象
 	acceptableItem := riv.findAcceptableItem(entry, text, pos)
 	if acceptableItem == nil { // 没有匹配对象，匹配不成功，返回
@@ -45,7 +46,7 @@ func (riv RegionInterpreterVisitor) visit(entry index.TermIndexEntry, text strin
 	}
 
 	// acceptableItem可能为TermType.Ignore类型，此时其value并不是RegionEntity对象，因此下面region的值可能为null
-	region := acceptableItem.Value.(RegionEntity)
+	region := acceptableItem.Value
 	riv.stack = append(riv.stack, acceptableItem)
 	if isFullMatch(entry, region) { // 使用全名匹配的词条数
 		riv.FullMatchCount++
@@ -56,10 +57,10 @@ func (riv RegionInterpreterVisitor) visit(entry index.TermIndexEntry, text strin
 	return true
 }
 
-func (riv RegionInterpreterVisitor) findAcceptableItem(
-	entry index.TermIndexEntry, text string, pos int) *index.TermIndexItem {
+func (riv *RegionInterpreterVisitor) findAcceptableItem(
+	entry *index.TermIndexEntry, text string, pos int) *index.TermIndexItem {
 	mostPriority := -1
-	var acceptableItem index.TermIndexItem
+	var acceptableItem *index.TermIndexItem
 
 loop:
 	for _, item := range entry.Items { // 每个 被索引对象循环，找出最匹配的
@@ -70,14 +71,14 @@ loop:
 
 		// 省市区中的特殊名称
 		if item.Types == IgnoreTerm {
-			if acceptableItem.IsNil() {
+			if acceptableItem == nil {
 				mostPriority = 4
 				acceptableItem = item
 			}
 			continue
 		}
 
-		region := item.Value.(RegionEntity)
+		region := item.Value
 		// 从未匹配上任何一个省市区，则从全部被索引对象中找出一个级别最高的
 		if riv.CurDivision.Province != nil {
 			// 在为匹配上任务省市区情况下, 由于 `xx路` 的xx是某县区/市区/省的别名, 如江苏路, 绍兴路等等, 导致错误的匹配。
@@ -247,14 +248,10 @@ loop:
 		}
 	}
 	return acceptableItem
-
 }
 
 func (riv RegionInterpreterVisitor) positioning(
-	acceptedRegion RegionEntity, entry index.TermIndexEntry, text string, pos int) int {
-	if acceptedRegion.IsNil() {
-		return pos
-	}
+	acceptedRegion *RegionEntity, entry *index.TermIndexEntry, text string, pos int) int {
 	//需要调整指针的情况
 	//1. 山东泰安肥城市桃园镇桃园镇山东省泰安市肥城县桃园镇东伏村
 	//   错误匹配方式：提取省市区时，将【肥城县】中的字符【肥城】匹配成【肥城市】，剩下一个【县】
@@ -291,10 +288,7 @@ func isAcceptableItemType(types TermEnum) bool {
 	return false
 }
 
-func isFullMatch(entry index.TermIndexEntry, region RegionEntity) bool {
-	if region.IsNil() {
-		return false
-	}
+func isFullMatch(entry *index.TermIndexEntry, region *RegionEntity) bool {
 	if len(entry.Key) == len(region.Name) {
 		return true
 	}
@@ -313,10 +307,7 @@ func (riv RegionInterpreterVisitor) hasThreeDivision() bool {
 
 // 更新当前已匹配区域对象的状态
 func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
-	region RegionEntity, entry index.TermIndexEntry) {
-	if region.IsNil() {
-		return
-	}
+	region *RegionEntity, entry *index.TermIndexEntry) {
 	// region为重复项，无需更新状态
 	if region.Equal(riv.CurDivision.Province) || region.Equal(riv.CurDivision.City) ||
 		region.Equal(riv.CurDivision.District) || region.Equal(riv.CurDivision.Street) ||
@@ -330,7 +321,7 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 	case ProvinceRegion:
 	case ProvinceLevelCity1:
 		riv.CurDivision.Province = region
-		riv.CurDivision.City = RegionEntity{}
+		riv.CurDivision.City = nil
 	case CityRegion:
 	case ProvinceLevelCity2:
 		riv.CurDivision.City = region
@@ -359,7 +350,7 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
-			riv.updateCityAndProvince(riv.CurDivision.District)
+			riv.updateCityAndProvince(riv.CurDivision.District.ParentId)
 		}
 	case TownRegion:
 		if riv.CurDivision.Town == nil {
@@ -369,7 +360,7 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
-			riv.updateCityAndProvince(riv.CurDivision.District)
+			riv.updateCityAndProvince(riv.CurDivision.District.ParentId)
 		}
 	case VillageRegion:
 		if riv.CurDivision.Village == nil {
@@ -379,19 +370,16 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.District = persister.GetRegion(region.ParentId)
 		}
 		if needUpdateCityAndProvince {
-			riv.updateCityAndProvince(riv.CurDivision.District)
+			riv.updateCityAndProvince(riv.CurDivision.District.ParentId)
 		}
 	}
 }
 
 // TODO
 
-func (riv RegionInterpreterVisitor) updateCityAndProvince(distinct RegionEntity) {
-	if distinct.IsNil() {
-		return
-	}
+func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId int64) {
 	if riv.CurDivision.City == nil {
-		riv.CurDivision.City = persister.GetRegion(distinct.ParentId)
+		riv.CurDivision.City = persister.GetRegion(parentId)
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentId)
 		}

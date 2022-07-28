@@ -1,16 +1,17 @@
 package index
 
 import (
-	"address_match_recommend/models"
+	. "address_match_recommend/models"
 )
 
+// TermIndexItem 索引对象
 type TermIndexItem struct {
-	Types models.TermEnum
-	Value any
+	Types TermEnum
+	Value *RegionEntity
 }
 
-func NewTermIndexItem(t models.TermEnum, v any) TermIndexItem {
-	return TermIndexItem{
+func NewTermIndexItem(t TermEnum, v *RegionEntity) *TermIndexItem {
+	return &TermIndexItem{
 		Types: t,
 		Value: v,
 	}

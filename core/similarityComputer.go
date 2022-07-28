@@ -44,7 +44,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 	}
 
 	// 解析地址
-	queryAddr := AddressEntity{Text: addressText}
+	queryAddr := AddressEntity{AddressText: addressText}
 	interpreter.Interpret(&queryAddr)
 
 	// 为词条计算特征值
@@ -99,18 +99,18 @@ func analyse(addr *AddressEntity) Document {
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
 	tokens := make([]string, 0)
-	if len(addr.Text) > 0 {
-		tokens = segmenter.Segment(addr.Text)
+	if len(addr.AddressText) > 0 {
+		tokens = segmenter.Segment(addr.AddressText)
 	}
 	terms := make([]*Term, 0) // 预分配空间 TODO
 
 	// 生成term
-	if addr.Town != nil {
-		doc.Town = NewTerm(TownTerm, addr.Town.Name)
+	if addr.Div.Town != nil {
+		doc.Town = NewTerm(TownTerm, addr.Div.Town.Name)
 		terms = append(terms, doc.Town)
 	}
-	if addr.Village != nil {
-		doc.Village = NewTerm(VillageTerm, addr.Village.Name)
+	if addr.Div.Village != nil {
+		doc.Village = NewTerm(VillageTerm, addr.Div.Village.Name)
 		terms = append(terms, doc.Village)
 	}
 	if len(addr.Road) > 0 {
@@ -500,7 +500,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	if qTextTermCount >= 2 && dTextTermMatchCount >= 2 {
 		textTermDensity = math.Sqrt(float64(dTextTermMatchCount/(matchEnd-matchStart+1)))*0.5 + 0.5
 	}
-	var simiDoc SimilarDocument
+	var simiDoc *SimilarDocument
 	if explain && topN > 1 {
 		simiDoc = NewSimilarDocument(doc)
 	}
@@ -565,13 +565,13 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 }
 
 func buildCacheKey(address *AddressEntity) string {
-	if address == nil || address.Province != nil || address.City != nil {
+	if address == nil || address.Div.Province != nil || address.Div.City != nil {
 		return ""
 	}
 
-	res := strconv.Itoa(int(address.Province.Id)) + "-" + strconv.Itoa(int(address.City.Id))
-	if address.City.Children != nil {
-		res += "-" + strconv.Itoa(int(address.District.Id))
+	res := strconv.Itoa(int(address.Div.Province.Id)) + "-" + strconv.Itoa(int(address.Div.City.Id))
+	if address.Div.City.Children != nil {
+		res += "-" + strconv.Itoa(int(address.Div.District.Id))
 	}
 	return res
 }
