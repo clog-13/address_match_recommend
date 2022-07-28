@@ -1,6 +1,6 @@
 package models
 
-type AddressEntity struct {
+type Address struct {
 	Id int64 `gorm:"primaryKey;comment:地址ID" json:"ID"`
 
 	AddressText string `gorm:"type:text;comment:完整地址" json:"address_text"`
@@ -11,12 +11,12 @@ type AddressEntity struct {
 	Div Division `gorm:"embedded;embeddedPrefix:division_;comment:区域"`
 }
 
-func NewAddrEntity(text string) *AddressEntity {
-	return &AddressEntity{
+func NewAddrEntity(text string) *Address {
+	return &Address{
 		AddressText: text,
 	}
 }
 
-func (d *AddressEntity) TableName() string {
+func (d *Address) TableName() string {
 	return "address"
 }

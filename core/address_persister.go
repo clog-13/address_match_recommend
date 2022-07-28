@@ -3,18 +3,18 @@ package core
 import . "address_match_recommend/models"
 
 type AddressPersister struct {
-	// REGION_TREE为中国国家区域对象，全国所有行政区域都以树状结构加载到REGION_TREE, 通过{@link RegionEntity#getChildren()}获取下一级列表
-	RegionTree *RegionEntity
+	// REGION_TREE为中国国家区域对象，全国所有行政区域都以树状结构加载到REGION_TREE, 通过{@link Region#getChildren()}获取下一级列表
+	RegionTree *Region
 
 	// 按区域ID缓存的全部区域对象。
-	RegionCache map[int64]*RegionEntity
+	RegionCache map[int64]*Region
 
 	RegionLoaded              bool
 	AddressIndexByHash        map[int64]struct{}
 	AddressIndexByHashCreated bool
 }
 
-func (ap AddressPersister) GetRegion(id int64) *RegionEntity {
+func (ap AddressPersister) GetRegion(id int64) *Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}
@@ -31,13 +31,13 @@ func (ap AddressPersister) loadRegions() {
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region` where id=1
 	ap.RegionTree = nil
 
-	ap.RegionCache = make(map[int64]*RegionEntity)
+	ap.RegionCache = make(map[int64]*Region)
 	ap.RegionCache[ap.RegionTree.ID] = ap.RegionTree
 	ap.loadRegionChildren(ap.RegionTree)
 	ap.RegionLoaded = true
 }
 
-func (ap AddressPersister) loadRegionChildren(parent *RegionEntity) {
+func (ap AddressPersister) loadRegionChildren(parent *Region) {
 	// 已经到最底层，结束
 	if parent == nil || parent.Types == StreetRegion || parent.Types == VillageRegion ||
 		parent.Types == PlatformL4 || parent.Types == TownRegion {
@@ -49,7 +49,7 @@ func (ap AddressPersister) loadRegionChildren(parent *RegionEntity) {
 	// from `bas_region`
 	// where parent_id=#{pid}
 	// order by id
-	children := make([]*RegionEntity, 0)
+	children := make([]*Region, 0)
 
 	// 递归加载下一级
 	if children != nil && len(children) > 0 {
@@ -61,7 +61,7 @@ func (ap AddressPersister) loadRegionChildren(parent *RegionEntity) {
 	}
 }
 
-func (ap AddressPersister) GetRootRegionChilden() *[]*RegionEntity {
+func (ap AddressPersister) GetRootRegionChilden() *[]*Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}

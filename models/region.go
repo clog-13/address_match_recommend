@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// RegionEntity 行政区域实体
-type RegionEntity struct {
+// Region 行政区域实体
+type Region struct {
 	ID uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 
 	Name  string     `gorm:"type:string;comment:区域名称" json:"region_name"`
@@ -14,12 +14,12 @@ type RegionEntity struct {
 	Types RegionEnum `gorm:"type:uint;comment:区域类型" json:"region_types"`
 
 	DivisionID   uint
-	ParentID     uint            `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
-	Children     []*RegionEntity `gorm:"foreignkey:ParentID;references:id" json:"region_children"`
-	OrderedNames pq.StringArray  `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
+	ParentID     uint           `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
+	Children     []*Region      `gorm:"foreignkey:ParentID" json:"region_children"`
+	OrderedNames pq.StringArray `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
 }
 
-func (r RegionEntity) IsTown() bool {
+func (r Region) IsTown() bool {
 	switch r.Types {
 	case CountryRegion:
 		return true
@@ -34,7 +34,7 @@ func (r RegionEntity) IsTown() bool {
 }
 
 // OrderedNameAndAlias 获取所有名称和别名列表，按字符长度倒排序。
-func (r RegionEntity) OrderedNameAndAlias() []string {
+func (r Region) OrderedNameAndAlias() []string {
 	if r.OrderedNames == nil {
 		return r.OrderedNames
 	}
@@ -42,7 +42,7 @@ func (r RegionEntity) OrderedNameAndAlias() []string {
 	return r.OrderedNames
 }
 
-func (r RegionEntity) buildOrderedNameAndAlias() {
+func (r Region) buildOrderedNameAndAlias() {
 	if r.OrderedNames != nil {
 		return
 	}
@@ -81,11 +81,11 @@ func (r RegionEntity) buildOrderedNameAndAlias() {
 	}
 }
 
-func (r *RegionEntity) Equal(t *RegionEntity) bool {
+func (r *Region) Equal(t *Region) bool {
 	return r.ParentID == t.ParentID && r.Name == t.Name && r.Alias == t.Alias &&
 		r.Types == t.Types
 }
 
-func (r *RegionEntity) TableName() string {
+func (r *Region) TableName() string {
 	return "region"
 }

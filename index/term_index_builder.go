@@ -20,7 +20,7 @@ func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []
 }
 
 // 为行政区划建立倒排索引
-func (tib TermIndexBuilder) indexRegions(regions *[]*RegionEntity) {
+func (tib TermIndexBuilder) indexRegions(regions *[]*Region) {
 	if len(*regions) == 0 {
 		return
 	}
@@ -80,7 +80,7 @@ func (tib TermIndexBuilder) indexIgnoring(ignoreList []string) {
 	}
 }
 
-func convertRegionType(region *RegionEntity) TermEnum {
+func convertRegionType(region *Region) TermEnum {
 	switch region.Types {
 	case ProvinceRegion:
 	case ProvinceLevelCity1:

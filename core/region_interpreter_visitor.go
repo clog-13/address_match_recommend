@@ -251,7 +251,7 @@ loop:
 }
 
 func (riv RegionInterpreterVisitor) positioning(
-	acceptedRegion *RegionEntity, entry *index.TermIndexEntry, text string, pos int) int {
+	acceptedRegion *Region, entry *index.TermIndexEntry, text string, pos int) int {
 	//需要调整指针的情况
 	//1. 山东泰安肥城市桃园镇桃园镇山东省泰安市肥城县桃园镇东伏村
 	//   错误匹配方式：提取省市区时，将【肥城县】中的字符【肥城】匹配成【肥城市】，剩下一个【县】
@@ -288,7 +288,7 @@ func isAcceptableItemType(types TermEnum) bool {
 	return false
 }
 
-func isFullMatch(entry *index.TermIndexEntry, region *RegionEntity) bool {
+func isFullMatch(entry *index.TermIndexEntry, region *Region) bool {
 	if len(entry.Key) == len(region.Name) {
 		return true
 	}
@@ -307,7 +307,7 @@ func (riv RegionInterpreterVisitor) hasThreeDivision() bool {
 
 // 更新当前已匹配区域对象的状态
 func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
-	region *RegionEntity, entry *index.TermIndexEntry) {
+	region *Region, entry *index.TermIndexEntry) {
 	// region为重复项，无需更新状态
 	if region.Equal(riv.CurDivision.Province) || region.Equal(riv.CurDivision.City) ||
 		region.Equal(riv.CurDivision.District) || region.Equal(riv.CurDivision.Street) ||

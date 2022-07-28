@@ -2,25 +2,25 @@ package models
 
 // Division 行政区域集合
 type Division struct {
-	Id int64 `gorm:"primaryKey;comment:行政区规范ID" json:"ID"`
+	Id uint `gorm:"primaryKey;comment:行政区规范ID" json:"ID"`
 
 	//ProvinceId uint
 	// `gorm:"foreignKey:division_id"`
-	Province *RegionEntity
+	Province *Region
 	//CityId     uint
-	City *RegionEntity
+	City *Region
 	//DistrictId uint
-	District *RegionEntity
+	District *Region
 	//StreetId   uint
-	Street *RegionEntity
+	Street *Region
 	//TownId     uint
-	Town *RegionEntity
+	Town *Region
 	//VillageId  uint
-	Village *RegionEntity
+	Village *Region
 }
 
 // LeastRegion 获取最小一级有效行政区域对象
-func (d Division) LeastRegion() *RegionEntity {
+func (d Division) LeastRegion() *Region {
 	if d.Village != nil {
 		return d.Village
 	}
@@ -39,7 +39,7 @@ func (d Division) LeastRegion() *RegionEntity {
 	return d.Province
 }
 
-func (d Division) GetTown() *RegionEntity {
+func (d Division) GetTown() *Region {
 	if d.Town != nil {
 		return d.Town
 	}
@@ -49,7 +49,7 @@ func (d Division) GetTown() *RegionEntity {
 	return nil
 }
 
-func (d Division) SetTown(value *RegionEntity) {
+func (d Division) SetTown(value *Region) {
 	if value == nil {
 		d.Town = nil
 		return

@@ -70,13 +70,13 @@ func NewAddressInterpreter(persister AddressPersister, visitor TermIndexVisitor)
 	}
 }
 
-// Interpret 将地址进行标准化处理, 解析成 AddressEntity
-func (ai AddressInterpreter) Interpret(entity *AddressEntity) {
+// Interpret 将地址进行标准化处理, 解析成 Address
+func (ai AddressInterpreter) Interpret(entity *Address) {
 	visitor := NewRegionInterpreterVisitor(persister)
 	ai.interpret(entity, visitor)
 }
 
-func (ai AddressInterpreter) interpret(entity *AddressEntity, visitor RegionInterpreterVisitor) {
+func (ai AddressInterpreter) interpret(entity *Address, visitor RegionInterpreterVisitor) {
 	// 清洗下开头垃圾数据, 针对用户数据
 	ai.prepare(entity)
 
@@ -112,7 +112,7 @@ func (ai AddressInterpreter) interpret(entity *AddressEntity, visitor RegionInte
 // TODO
 
 // 清洗下开头垃圾数据
-func (ai AddressInterpreter) prepare(entity *AddressEntity) {
+func (ai AddressInterpreter) prepare(entity *Address) {
 	if len(entity.AddressText) == 0 {
 		return
 	}
@@ -130,7 +130,7 @@ func (ai AddressInterpreter) prepare(entity *AddressEntity) {
 }
 
 // 提取建筑物号
-func (ai AddressInterpreter) extractBuildingNum(entity *AddressEntity) bool {
+func (ai AddressInterpreter) extractBuildingNum(entity *Address) bool {
 	if len(entity.AddressText) == 0 {
 		return false
 	}
@@ -140,12 +140,12 @@ func (ai AddressInterpreter) extractBuildingNum(entity *AddressEntity) bool {
 	return found
 }
 
-//func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []AddressEntity {
+//func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []Address {
 //	if addrTextList == nil {
 //		return nil
 //	}
 //	numSuccess, numFail := 0, 0
-//	addresses := make([]AddressEntity, 0)
+//	addresses := make([]Address, 0)
 //	for _, addrText := range addrTextList {
 //		if len(addrText) == 0 {
 //			continue
@@ -161,5 +161,5 @@ func (ai AddressInterpreter) extractBuildingNum(entity *AddressEntity) bool {
 //	return addresses
 //}
 //
-//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) AddressEntity {
+//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) Address {
 //}

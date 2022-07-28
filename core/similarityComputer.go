@@ -43,7 +43,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 		return Query{}
 	}
 
-	queryAddr := AddressEntity{AddressText: addressText}
+	queryAddr := Address{AddressText: addressText}
 	interpreter.Interpret(&queryAddr) // 解析地址
 	queryDoc := analyse(&queryAddr)   // 为词条计算特征值
 
@@ -93,7 +93,7 @@ func SortSimilarDocs(q *Query) {
 }
 
 // 分词，设置词条权重
-func analyse(addr *AddressEntity) Document {
+func analyse(addr *Address) Document {
 	doc := NewDocument()
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
@@ -375,7 +375,8 @@ func translateRoadNum(text string) int {
 	return 0
 }
 
-func loadDocunentsFromCache(address *AddressEntity) []Document {
+func loadDocunentsFromCache(address *Address) []Document {
+
 	cacheKey := buildCacheKey(address)
 	if len(cacheKey) == 0 {
 		return nil
@@ -446,7 +447,9 @@ func loadDocunentsFromCache(address *AddressEntity) []Document {
 }
 
 func loadDocumentsFromDatabase(key string) []Document {
-
+	var docs []Document
+	DB.Find(&docs)
+	return docs
 }
 
 func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) float64 {
@@ -565,7 +568,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	return s
 }
 
-func buildCacheKey(address *AddressEntity) string {
+func buildCacheKey(address *Address) string {
 	if address == nil || address.Div.Province != nil || address.Div.City != nil {
 		return ""
 	}

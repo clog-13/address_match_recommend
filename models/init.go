@@ -15,5 +15,6 @@ func Init() *gorm.DB {
 		log.Println("gorm Init Error : ", err)
 	}
 
+	db.AutoMigrate(&Document{}, &Term{})
 	return db
 }

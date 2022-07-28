@@ -1,12 +1,14 @@
 package similarity
 
+import "address_match_recommend/models"
+
 type SimilarDocument struct {
-	Doc          Document
+	Doc          models.Document
 	MatchedTerms map[string]*MatchedTerm
 	Similarity   float64
 }
 
-func NewSimilarDocument(doc Document) *SimilarDocument {
+func NewSimilarDocument(doc models.Document) *SimilarDocument {
 	return &SimilarDocument{Doc: doc}
 }
 

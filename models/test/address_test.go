@@ -6,33 +6,33 @@ import (
 )
 
 func TestInsertAddress(t *testing.T) {
-	addr := &AddressEntity{
+	addr := &Address{
 		AddressText: "_clog_addr",
 		Road:        "_clog_addr",
 		RoadNum:     "_clog_addr",
 		BuildingNum: "_clog_addr",
 	}
 	addr.Div = Division{}
-	addr.Div.Province = &RegionEntity{
+	addr.Div.Province = &Region{
 		Name:         "_clog_d_p",
 		Alias:        "_clog_d_p",
 		Types:        13,
-		Children:     make([]*RegionEntity, 0),
+		Children:     make([]*Region, 0),
 		OrderedNames: make([]string, 0),
 	}
-	addr.Div.Province.Children = append(addr.Div.Province.Children, &RegionEntity{
+	addr.Div.Province.Children = append(addr.Div.Province.Children, &Region{
 		Name:  "pc",
 		Alias: "pc",
 	})
-	addr.Div.Province.Children = append(addr.Div.Province.Children, &RegionEntity{
+	addr.Div.Province.Children = append(addr.Div.Province.Children, &Region{
 		Name:  "pc1",
 		Alias: "pc1",
 	})
-	addr.Div.Town = &RegionEntity{
+	addr.Div.Town = &Region{
 		Name:         "_clog_d_t",
 		Alias:        "_clog_d_t",
 		Types:        13,
-		Children:     make([]*RegionEntity, 0),
+		Children:     make([]*Region, 0),
 		OrderedNames: make([]string, 0),
 	}
 	DB.Create(addr)

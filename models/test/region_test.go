@@ -6,15 +6,15 @@ import (
 )
 
 func TestInsert(t *testing.T) {
-	re := &RegionEntity{
+	re := &Region{
 		ParentID: 1,
 		Name:     "-1",
 		Alias:    "-1",
 		Types:    1,
 	}
 
-	re.Children = make([]*RegionEntity, 0)
-	child := &RegionEntity{
+	re.Children = make([]*Region, 0)
+	child := &Region{
 		ParentID: 2,
 		Name:     "-2",
 		Alias:    "-2",

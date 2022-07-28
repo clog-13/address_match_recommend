@@ -7,10 +7,10 @@ import (
 // TermIndexItem 索引对象
 type TermIndexItem struct {
 	Types TermEnum
-	Value *RegionEntity
+	Value *Region
 }
 
-func NewTermIndexItem(t TermEnum, v *RegionEntity) *TermIndexItem {
+func NewTermIndexItem(t TermEnum, v *Region) *TermIndexItem {
 	return &TermIndexItem{
 		Types: t,
 		Value: v,

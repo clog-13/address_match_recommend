@@ -7,7 +7,7 @@ import (
 
 func TestInsertDivision(t *testing.T) {
 	d := &Division{}
-	d.Street = &RegionEntity{
+	d.Street = &Region{
 		Name:  "xiiv_street",
 		Alias: "xiiv_street",
 		Types: 10,

@@ -4,8 +4,8 @@ import "address_match_recommend/models"
 
 type Query struct {
 	TopN      int
-	QueryAddr models.AddressEntity
-	QueryDoc  Document
+	QueryAddr models.Address
+	QueryDoc  models.Document
 
 	SimiDocs []*SimilarDocument
 }
@@ -41,7 +41,7 @@ func (q Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
 	return false
 }
 
-func (q Query) AddSimiDocs(doc Document, similarity float64) bool {
+func (q Query) AddSimiDocs(doc models.Document, similarity float64) bool {
 	if similarity <= 0 {
 		return false
 	}

@@ -1,4 +1,4 @@
-package similarity
+package models
 
 import (
 	"database/sql/driver"
@@ -7,16 +7,23 @@ import (
 )
 
 type Document struct {
+	Id uint `gorm:"primaryKey;comment:文档ID" json:"ID"`
+
 	// 文档所有词条, 按照文档顺序, 未去重
-	Terms []*Term
+	TermsId uint    `gorm:"uniqueIndex"`
+	Terms   []*Term `gorm:"foreignKey:document_id;references:terms_id;"`
 
 	// 乡镇相关的词条信息
-	Town    *Term
-	Village *Term
+	TownId    uint  `gorm:"uniqueIndex"`
+	Town      *Term `gorm:"foreignKey:document_id;references:town_id;"`
+	VillageId uint  `gorm:"uniqueIndex"`
+	Village   *Term `gorm:"foreignKey:document_id;references:village_id;"`
 
 	// 道路信息
-	Road         *Term
-	RoadNum      *Term
+	RoadId       uint  `gorm:"uniqueIndex"`
+	Road         *Term `gorm:"foreignKey:document_id;references:road_id;"`
+	RoadNumId    uint  `gorm:"uniqueIndex"`
+	RoadNum      *Term `gorm:"foreignKey:document_id;references:road_num_id;"`
 	RoadNumValue int
 
 	TermsMap map[string]*Term `gorm:"-"` // 数据库不存储
@@ -65,4 +72,8 @@ func (args Args) Value() (driver.Value, error) {
 	}
 
 	return json.Marshal(args)
+}
+
+func (d Document) TableName() string {
+	return "document"
 }
