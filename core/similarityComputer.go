@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-// TODO point
-
 var (
 	BoostM  = 1.0  // 正常权重
 	BoostL  = 2.0  // 加权

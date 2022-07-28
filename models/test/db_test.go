@@ -15,6 +15,6 @@ func TestConn(t *testing.T) {
 	if err != nil {
 		log.Println("gorm Init Error : ", err)
 	}
-	db.AutoMigrate(&models.Address{})
+	db.AutoMigrate(&models.Document{}, &models.Term{})
 	fmt.Println(db.Name())
 }

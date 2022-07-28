@@ -2,15 +2,14 @@ package models
 
 // Term 词条
 type Term struct {
-	Id uint `gorm:"primaryKey;comment:词条ID" json:"ID"`
+	Id uint `gorm:"primaryKey;"`
 
-	Text  string   `gorm:"type:text;comment:词条字段" json:"term_text"`
-	Types TermEnum `gorm:"type:SMALLINT;comment:词条类型" json:"term_types"`
-	Idf   float64  `gorm:"type:float;comment:IDF" json:"term_idf"`
+	TermId uint
+	Text   string   `gorm:"type:text;comment:词条字段" json:"term_text"`
+	Types  TermEnum `gorm:"type:SMALLINT;comment:词条类型" json:"term_types"`
+	Idf    float64  `gorm:"type:float;comment:IDF" json:"term_idf"`
 
-	DocumentID uint
-	RefID      *uint `json:"term_parent_id"`
-	Ref        *Term `gorm:"comment:相关联的词条引用" json:"term_ref"`
+	Ref *Term `gorm:"-"`
 }
 
 func NewTerm(types TermEnum, text string) *Term {
