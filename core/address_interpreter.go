@@ -47,9 +47,10 @@ var (
 	bracketPattern = regexp.MustCompile(`([\\(（\\{\\<〈\\[【「][^\\)）\\}\\>〉\\]】」]*[\\)）\\}\\>〉\\]】」])`)
 
 	// 道路信息
-	P_ROAD = regexp.MustCompile(`^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?`)
+	reROAD = regexp.MustCompile(`^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?`)
+
 	// 道路中未匹配到的building信息
-	P_ROAD_BUILDING = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
+	reRoadBuilding = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
 
 	// 村信息
 	P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
@@ -59,6 +60,107 @@ var (
 	invalidTown           = make(map[string]struct{})
 	invalidTownFollowings = make(map[string]struct{})
 )
+
+func init() {
+	invalidTownFollowings["政府"] = struct{}{}
+	invalidTownFollowings["大街"] = struct{}{}
+	invalidTownFollowings["大道"] = struct{}{}
+	invalidTownFollowings["社区"] = struct{}{}
+	invalidTownFollowings["小区"] = struct{}{}
+	invalidTownFollowings["小学"] = struct{}{}
+	invalidTownFollowings["中学"] = struct{}{}
+	invalidTownFollowings["医院"] = struct{}{}
+	invalidTownFollowings["银行"] = struct{}{}
+	invalidTownFollowings["中心"] = struct{}{}
+	invalidTownFollowings["卫生"] = struct{}{}
+	invalidTownFollowings["一小"] = struct{}{}
+	invalidTownFollowings["一中"] = struct{}{}
+	invalidTownFollowings["政局"] = struct{}{}
+	invalidTownFollowings["企局"] = struct{}{}
+
+	invalidTown["新村"] = struct{}{}
+	invalidTown["外村"] = struct{}{}
+	invalidTown["大村"] = struct{}{}
+	invalidTown["后村"] = struct{}{}
+	invalidTown["东村"] = struct{}{}
+	invalidTown["南村"] = struct{}{}
+	invalidTown["北村"] = struct{}{}
+	invalidTown["西村"] = struct{}{}
+	invalidTown["上村"] = struct{}{}
+	invalidTown["下村"] = struct{}{}
+	invalidTown["一村"] = struct{}{}
+	invalidTown["二村"] = struct{}{}
+	invalidTown["三村"] = struct{}{}
+	invalidTown["四村"] = struct{}{}
+	invalidTown["五村"] = struct{}{}
+	invalidTown["六村"] = struct{}{}
+	invalidTown["七村"] = struct{}{}
+	invalidTown["八村"] = struct{}{}
+	invalidTown["九村"] = struct{}{}
+	invalidTown["十村"] = struct{}{}
+	invalidTown["中村"] = struct{}{}
+	invalidTown["街村"] = struct{}{}
+	invalidTown["头村"] = struct{}{}
+	invalidTown["店村"] = struct{}{}
+	invalidTown["桥村"] = struct{}{}
+	invalidTown["楼村"] = struct{}{}
+	invalidTown["老村"] = struct{}{}
+	invalidTown["户村"] = struct{}{}
+	invalidTown["山村"] = struct{}{}
+	invalidTown["才村"] = struct{}{}
+	invalidTown["子村"] = struct{}{}
+	invalidTown["旧村"] = struct{}{}
+	invalidTown["文村"] = struct{}{}
+	invalidTown["全村"] = struct{}{}
+	invalidTown["和村"] = struct{}{}
+	invalidTown["湖村"] = struct{}{}
+	invalidTown["甲村"] = struct{}{}
+	invalidTown["乙村"] = struct{}{}
+	invalidTown["丙村"] = struct{}{}
+	invalidTown["邻村"] = struct{}{}
+	invalidTown["乡村"] = struct{}{}
+	invalidTown["村二村"] = struct{}{}
+	invalidTown["中关村"] = struct{}{}
+
+	invalidTown["城乡"] = struct{}{}
+	invalidTown["县乡"] = struct{}{}
+	invalidTown["头乡"] = struct{}{}
+	invalidTown["牌乡"] = struct{}{}
+	invalidTown["茶乡"] = struct{}{}
+	invalidTown["水乡"] = struct{}{}
+	invalidTown["港乡"] = struct{}{}
+	invalidTown["巷乡"] = struct{}{}
+	invalidTown["七乡"] = struct{}{}
+	invalidTown["站乡"] = struct{}{}
+	invalidTown["西乡"] = struct{}{}
+	invalidTown["宝乡"] = struct{}{}
+	invalidTown["还乡"] = struct{}{}
+
+	invalidTown["古镇"] = struct{}{}
+	invalidTown["小镇"] = struct{}{}
+	invalidTown["街镇"] = struct{}{}
+	invalidTown["城镇"] = struct{}{}
+	invalidTown["环镇"] = struct{}{}
+	invalidTown["湾镇"] = struct{}{}
+	invalidTown["岗镇"] = struct{}{}
+	invalidTown["镇镇"] = struct{}{}
+	invalidTown["场镇"] = struct{}{}
+	invalidTown["新镇"] = struct{}{}
+	invalidTown["乡镇"] = struct{}{}
+	invalidTown["屯镇"] = struct{}{}
+	invalidTown["大镇"] = struct{}{}
+	invalidTown["南镇"] = struct{}{}
+	invalidTown["店镇"] = struct{}{}
+	invalidTown["铺镇"] = struct{}{}
+	invalidTown["关镇"] = struct{}{}
+	invalidTown["口镇"] = struct{}{}
+	invalidTown["和镇"] = struct{}{}
+	invalidTown["建镇"] = struct{}{}
+	invalidTown["集镇"] = struct{}{}
+	invalidTown["庙镇"] = struct{}{}
+	invalidTown["河镇"] = struct{}{}
+	invalidTown["村镇"] = struct{}{}
+}
 
 type AddressInterpreter struct {
 	indexBuilder index.TermIndexBuilder
@@ -93,8 +195,9 @@ func (ai AddressInterpreter) interpret(entity *Address, visitor index.TermIndexV
 	ai.extractRegion(entity, visitor)
 	// 规整省市区街道等匹配的结果
 	ai.removeRedundancy(entity, visitor)
-	//// 提取道路信息
-	//extractRoad(entity)
+
+	// 提取道路信息
+	ai.extractRoad(entity)
 
 	/**
 	  entity.text = entity.text!!.replace("[0-9A-Za-z\\#]+(单元|楼|室|层|米|户|\\#)", "")
@@ -311,7 +414,6 @@ func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.Ter
 	if len(entity.AddressText) == 0 || entity.Province == nil || entity.City == nil {
 		return
 	}
-	var removed bool
 	// 采用后序数组方式匹配省市区
 	endIndex := len(entity.AddressText) - 2
 	var i int
@@ -328,6 +430,8 @@ func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.Ter
 			i++
 			continue
 		}
+
+		// TODO forkey_id
 
 		devision := visitor.GetDevision() // 正确匹配
 		// 修复 区 信息
@@ -348,26 +452,67 @@ func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.Ter
 			devision.Town.ParentID == entity.District.ID {
 			entity.Town = devision.Town
 		}
-	}
-	/**
-	      // > 修复乡镇信息
-	      if (entity.hasDistrict() && !entity.hasTown()
-	              && devision.hasTown() && devision.town!!.parentId == entity.district!!.id)
-	          entity.town = devision.town
-	      else if (entity.hasDistrict() && entity.hasTown() && entity.town!! == entity.street
-	              && devision.hasTown()
-	              && devision.town!! != devision.street
-	              && devision.town!!.parentId == entity.district!!.id)
-	          entity.town = devision.town
-	      if (entity.hasDistrict() && !entity.hasVillage() && devision.hasVillage()
-	              && devision.village!!.parentId == entity.district!!.id)
-	          entity.village = devision.village
+		if entity.District != nil && entity.Village == nil && devision.Village != nil &&
+			devision.Village.ParentID == entity.District.ID {
+			entity.Village = devision.Village
+		}
 
-	      // 正确匹配上，删除
-	      entity.text = entity.text!!.take(visitor.endPosition() + 1)
-	      endIndex = entity.text!!.length
-	      i = 0
-	      removed = true
+		// 正确匹配上，删除
+		entity.AddressText = entity.AddressText[visitor.EndPosition()+1:]
+		endIndex = len(entity.AddressText)
+		i = 0
+	}
+}
+
+func (ai AddressInterpreter) extractRoad(entity *Address) {
+	// 如果已经提取过了
+	if len(entity.AddressText) == 0 || len(entity.RoadText) > 0 {
+		return
+	}
+
+	/**
+	  val matcher = P_ROAD.matcher(entity.text)
+	  if (matcher.find()) {
+	      val road = matcher.group("road")
+	      val ex = matcher.group("ex")
+	      var roadNum: String? = matcher.group("roadnum")
+	      roadNum = (ex ?: "") + if (roadNum == null) "" else roadNum
+	      val leftText = entity.text!!.take(road.length + roadNum.length)
+	      if (leftText.startsWith("小区")) return false
+	      entity.road = fixRoad(road)
+	      // 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
+	      if (roadNum.length == 1) {
+	          entity.text = roadNum + leftText
+	      } else {
+	          entity.roadNum = roadNum
+	          entity.text = leftText
+	      }
+	      // 修复road中存在building的问题
+	      if (entity.buildingNum.isNullOrBlank()) {
+	          fixRoadBuilding(entity)
+	      }
+	      return true
 	  }
+	  return false
 	*/
+}
+
+func fixRoad(road string) string {
+	if len(road) == 0 || road[:len(road)/2] != road[len(road)/2:] {
+		return road
+	}
+	return road[:len(road)/2]
+}
+
+func fixRoadBuilding(entity *Address) {
+	if len(entity.AddressText) == 0 {
+		return
+	}
+	// 最开始匹配, 先这样处理
+	matchIdx := reRoadBuilding.FindStringIndex(entity.AddressText)
+	if reRoadBuilding.MatchString(entity.AddressText) &&
+		matchIdx[0] == 0 {
+		entity.BuildingNum = entity.AddressText[matchIdx[0]:matchIdx[1]]
+		entity.AddressText = entity.AddressText[:matchIdx[0]] + entity.AddressText[matchIdx[1]:]
+	}
 }

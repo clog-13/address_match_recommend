@@ -18,9 +18,6 @@ func (ap AddressPersister) GetRegion(id uint) *Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}
-	//if ap.RegionTree.IsNil() {
-	//	panic("Region data not initialized")
-	//}
 	return ap.RegionCache[id]
 }
 
@@ -30,7 +27,7 @@ func (ap AddressPersister) loadRegions() {
 	}
 
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region` where id=1
-	ap.RegionTree = nil
+	DB.Where("id =", 1).First(ap.RegionTree)
 
 	ap.RegionCache = make(map[uint]*Region)
 	ap.RegionCache[ap.RegionTree.ID] = ap.RegionTree
@@ -50,7 +47,8 @@ func (ap AddressPersister) loadRegionChildren(parent *Region) {
 	// from `bas_region`
 	// where parent_id=#{pid}
 	// order by id
-	children := make([]*Region, 0)
+	var children []*Region
+	DB.Order("id").Where("parent_id =", parent.ID).Find(&children)
 
 	// 递归加载下一级
 	if children != nil && len(children) > 0 {
