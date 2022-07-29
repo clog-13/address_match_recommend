@@ -3,6 +3,7 @@ package core
 import (
 	"address_match_recommend/index"
 	. "address_match_recommend/models"
+	"address_match_recommend/utils"
 	"regexp"
 	"strings"
 )
@@ -37,13 +38,13 @@ var (
 	reBuildingNumV = regexp.MustCompile(`(栋|幢|橦|号楼|号|\\#|\\#楼|单元|室|房|门)+`)
 
 	// 匹配building的模式：12-2-302，12栋3单元302
-	P_BUILDING_NUM2 = regexp.MustCompile(`[A-Za-z\d]+([\\#\\-一－/\\\\]+[A-Za-z\d]+)+`)
+	reBuildingNum2 = regexp.MustCompile(`[A-Za-z\d]+([\\#\\-一－/\\\\]+[A-Za-z\d]+)+`)
 
 	// 匹配building的模式：10组21号，农村地址
-	P_BUILDING_NUM3 = regexp.MustCompile(`[0-9]+(组|通道)[A-Z0-9\\-一]+号?`)
+	reBuildingNum3 = regexp.MustCompile(`[0-9]+(组|通道)[A-Z0-9\\-一]+号?`)
 
 	// 简单括号匹配
-	BRACKET_PATTERN = regexp.MustCompile(`(?P<bracket>([\\(（\\{\\<〈\\[【「][^\\)）\\}\\>〉\\]】」]*[\\)）\\}\\>〉\\]】」]))`)
+	bracketPattern = regexp.MustCompile(`([\\(（\\{\\<〈\\[【「][^\\)）\\}\\>〉\\]】」]*[\\)）\\}\\>〉\\]】」])`)
 
 	// 道路信息
 	P_ROAD = regexp.MustCompile(`^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?`)
@@ -75,23 +76,21 @@ func (ai AddressInterpreter) Interpret(entity *Address) {
 	ai.interpret(entity, visitor)
 }
 
-func (ai AddressInterpreter) interpret(entity *Address, visitor RegionInterpreterVisitor) {
+func (ai AddressInterpreter) interpret(entity *Address, visitor TermIndexVisitor) {
 	// 清洗下开头垃圾数据, 针对用户数据
 	ai.prepare(entity)
-
-	// extractBuildingNum, 提取建筑物号
+	// 提取建筑物号
 	ai.extractBuildingNum(entity)
+	// 去除特殊字符
+	ai.removeSpecialChars(entity)
+	// 提取包括的数据
+	brackets := ai.extractBrackets(entity)
+	// 去除包括的特殊字符
+	brackets = utils.Remove(brackets, specialChars2, "")
+	entity.AddressText = utils.Remove(entity.AddressText, specialChars2, "")
 
-	//// 去除特殊字符
-	//removeSpecialChars(entity)
-	//// 提取包括的数据
-	//var brackets = extractBrackets(entity)
-	//// 去除包括的特殊字符
-	//brackets = brackets.remove(specialChars2)
-	//removeBrackets(entity)
-
-	//// 提取行政规划标准地址
-	//extractRegion(entity, visitor)
+	// 提取行政规划标准地址
+	ai.extractRegion(entity, visitor)
 	//// 规整省市区街道等匹配的结果
 	//removeRedundancy(entity, visitor)
 	//// 提取道路信息
@@ -106,6 +105,32 @@ func (ai AddressInterpreter) interpret(entity *Address, visitor RegionInterprete
 	      if (entity.road.isNullOrBlank()) extractRoad(entity)
 	  }
 	*/
+}
+
+func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []Address {
+	return nil
+	//	if addrTextList == nil {
+	//		return nil
+	//	}
+	//	numSuccess, numFail := 0, 0
+	//	addresses := make([]Address, 0)
+	//	for _, addrText := range addrTextList {
+	//		if len(addrText) == 0 {
+	//			continue
+	//		}
+	//		address := interpretSimgle(addrText, visitor)
+	//		if address.IsNil() || !address.City.IsNil() || !address.District.IsNil() {
+	//			numFail++
+	//			continue
+	//		}
+	//		numSuccess++
+	//		addresses = append(addresses, address)
+	//	}
+	//	return addresses
+	//}
+	//
+	//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) Address {
+
 }
 
 // 清洗下开头垃圾数据
@@ -165,33 +190,125 @@ func (ai AddressInterpreter) extractBuildingNum(entity *Address) {
 	if !found {
 		matches := reBuildingNum1.FindAllStringSubmatch(entity.AddressText, -1)
 		matchesIdx := reBuildingNum1.FindAllStringSubmatchIndex(entity.AddressText, -1)
-		for i, v := range matches {
-			if l
-		}
+		for i, match := range matches {
+			if len(match[0]) == 0 {
+				continue
+			}
 
+			var notEmptyCnt int
+			for _, v := range match {
+				if len(v) > 0 {
+					notEmptyCnt++
+				}
+			}
+
+			build := match[0]
+			if notEmptyCnt > 3 && reBuildingNumV.MatchString(build) {
+				pos := matchesIdx[i][0]
+				if strings.HasPrefix(build, "路") || strings.HasPrefix(build, "街") ||
+					strings.HasPrefix(build, "巷") {
+					pos += strings.Index(build, "号") + 1
+					build = entity.AddressText[pos:matchesIdx[i][1]]
+				}
+				entity.BuildingNum = build
+				entity.AddressText = entity.AddressText[:pos] + entity.AddressText[matchesIdx[i][1]:]
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found { // xx-xx-xx（xx栋xx单元xxx）
+		match := reBuildingNum2.FindString(entity.AddressText)
+		if len(match) > 0 {
+			entity.BuildingNum = match
+			pos := reBuildingNum2.FindStringIndex(entity.AddressText)
+			entity.AddressText = entity.AddressText[:pos[0]] + entity.AddressText[pos[1]:]
+			found = true
+		}
+	}
+
+	if !found { // xx组xx号, xx通道xx号
+		match := reBuildingNum3.FindString(entity.AddressText)
+		if len(match) > 0 {
+			entity.BuildingNum = match
+			pos := reBuildingNum2.FindStringIndex(entity.AddressText)
+			entity.AddressText = entity.AddressText[:pos[0]] + entity.AddressText[pos[1]:]
+			found = true
+		}
 	}
 }
 
-//func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []Address {
-//	if addrTextList == nil {
-//		return nil
-//	}
-//	numSuccess, numFail := 0, 0
-//	addresses := make([]Address, 0)
-//	for _, addrText := range addrTextList {
-//		if len(addrText) == 0 {
-//			continue
-//		}
-//		address := interpretSimgle(addrText, visitor)
-//		if address.IsNil() || !address.City.IsNil() || !address.District.IsNil() {
-//			numFail++
-//			continue
-//		}
-//		numSuccess++
-//		addresses = append(addresses, address)
-//	}
-//	return addresses
-//}
-//
-//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) Address {
-//}
+// 去除特殊字符
+func (ai AddressInterpreter) removeSpecialChars(entity *Address) {
+	if len(entity.AddressText) == 0 {
+		return
+	}
+
+	// 性能优化：使用String.replaceAll()和Matcher.replaceAll()方法性能相差不大，都比较耗时
+	// 这种简单替换场景，自定义方法的性能比String.replaceAll()和Matcher.replaceAll()快10多倍接近20倍
+	// 删除特殊字符
+	text := utils.Remove(entity.AddressText, specialChars1, "")
+
+	// 删除连续出现5个以上的数字 TODO: 可能会出现, 这个暂做这个处理
+	text = utils.RemoveRepeatNum(text, 6)
+	entity.AddressText = text
+
+	// 去除building
+	build := entity.BuildingNum
+	if len(build) == 0 {
+		return
+	}
+	build = utils.Remove(entity.AddressText, specialChars1, "-一－_#")
+	build = utils.RemoveRepeatNum(text, 6)
+	entity.BuildingNum = build
+}
+
+// 提取包括的数据
+func (ai AddressInterpreter) extractBrackets(entity *Address) string {
+	if len(entity.AddressText) == 0 {
+		return ""
+	}
+
+	// 匹配出带有 `Brackets` 的文字, 拼接到 text 中
+	matches := bracketPattern.FindAllString(entity.AddressText, -1)
+	var found bool
+	var sb strings.Builder
+	for _, match := range matches {
+		if len(match) <= 2 { // 如果没有文字
+			continue
+		}
+		sb.WriteString(match[1 : len(match)-1])
+		found = true
+	}
+	if found {
+		entity.AddressText = bracketPattern.ReplaceAllString(entity.AddressText, "")
+		return sb.String()
+	}
+	return ""
+}
+
+// 提取行政规划标准地址
+func (ai AddressInterpreter) extractRegion(entiy *Address, visitor TermIndexVisitor) {
+	if len(entiy.AddressText) == 0 {
+		return
+	}
+	visitor.EndRound()
+	// 开始匹配
+
+	/**
+	  	        if (entity.text.isNullOrBlank()) return false
+
+	            // 开始匹配
+	            visitor.reset()
+	            indexBuilder!!.deepMostQuery(entity.text, visitor)
+	            entity.province = visitor.devision().province
+	            entity.city = visitor.devision().city
+	            entity.district = visitor.devision().district
+	            entity.street = visitor.devision().street
+	            entity.town = visitor.devision().town
+	            entity.village = visitor.devision().village
+	            entity.text = entity.text!!.take(visitor.endPosition() + 1)
+	            return visitor.hasResult()
+	*/
+}

@@ -23,8 +23,8 @@ type RegionInterpreterVisitor struct {
 	stack []*index.TermIndexItem
 }
 
-func NewRegionInterpreterVisitor(ap AddressPersister) RegionInterpreterVisitor {
-	newRiv := RegionInterpreterVisitor{
+func NewRegionInterpreterVisitor(ap AddressPersister) *RegionInterpreterVisitor {
+	newRiv := &RegionInterpreterVisitor{
 		CurrentPos:  -1,
 		DeepMostPos: -1,
 		Persister:   ap,
@@ -38,7 +38,7 @@ func NewRegionInterpreterVisitor(ap AddressPersister) RegionInterpreterVisitor {
 	return newRiv
 }
 
-func (riv *RegionInterpreterVisitor) visit(entry *index.TermIndexEntry, text string, pos int) bool {
+func (riv *RegionInterpreterVisitor) Visit(entry *index.TermIndexEntry, text string, pos int) bool {
 	// 找到最匹配的 被索引对象
 	acceptableItem := riv.findAcceptableItem(entry, text, pos)
 	if acceptableItem == nil { // 没有匹配对象，匹配不成功，返回
@@ -383,5 +383,36 @@ func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
+	}
+}
+
+func (riv RegionInterpreterVisitor) StartRound() {
+	riv.CurrentLevel++
+}
+
+func (riv RegionInterpreterVisitor) PositionAfterAcceptItem() int {
+	return riv.CurrentPos
+}
+
+func (riv RegionInterpreterVisitor) EndVisit(entry *index.TermIndexEntry, text string, pos int) {
+
+}
+
+func (riv RegionInterpreterVisitor) EndRound() {
+	riv.checkDeepMost()
+	riv.CurrentLevel--
+}
+
+func (riv RegionInterpreterVisitor) checkDeepMost() {
+	if len(riv.stack) > riv.DeepMostLevel {
+		riv.DeepMostLevel = len(riv.stack)
+		riv.DeepMostPos = riv.CurrentPos
+		riv.DeepMostFullMatchCount = riv.FullMatchCount
+		riv.DeepMostDivision.Province = riv.CurDivision.Province
+		riv.DeepMostDivision.City = riv.CurDivision.City
+		riv.DeepMostDivision.District = riv.CurDivision.District
+		riv.DeepMostDivision.Street = riv.CurDivision.Street
+		riv.DeepMostDivision.Town = riv.CurDivision.Town
+		riv.DeepMostDivision.Village = riv.CurDivision.Village
 	}
 }

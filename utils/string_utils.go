@@ -1,5 +1,7 @@
 package utils
 
+import "strings"
+
 func IsAnsiChars(text string) bool {
 	if len(text) == 0 {
 		return false
@@ -47,4 +49,53 @@ func Substring(text string, begin, end int) string {
 		end = len(text)
 	}
 	return text[begin:end]
+}
+
+func Remove(text string, chars []byte, exclude string) string {
+	if len(text) == 0 || len(chars) == 0 {
+		return text
+	}
+	charSet := make(map[byte]struct{}, 0)
+	for _, v := range chars {
+		charSet[v] = struct{}{} // TODO cache
+	}
+	var sb strings.Builder
+	var removed bool
+	for _, v := range text {
+		_, ok := charSet[byte(v)]
+		if ok && !strings.Contains(exclude, string(v)) {
+			removed = true
+			continue
+		}
+		sb.WriteRune(v)
+	}
+	if removed {
+		return sb.String()
+	} else {
+		return text
+	}
+}
+
+func RemoveRepeatNum(text string, n int) string {
+	if len(text) < n {
+		return text
+	}
+	var sb strings.Builder
+	var cnt int
+	for i, v := range text {
+		if v >= '0' && v <= '9' {
+			cnt++
+			continue
+		}
+		if cnt > 0 && cnt < n {
+			sb.WriteString(text[i-cnt : i])
+		}
+		cnt = 0
+		sb.WriteRune(v)
+	}
+	if cnt > 0 && cnt < n {
+		sb.WriteString(text[len(text)-cnt:])
+	}
+
+	return sb.String()
 }
