@@ -4,6 +4,7 @@ import (
 	"address_match_recommend/index"
 	. "address_match_recommend/models"
 	"address_match_recommend/utils"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -53,9 +54,9 @@ var (
 	reRoadBuilding = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
 
 	// 村信息
-	P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
-	P_TOWN2 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{1,3}镇)?(?P<x>[\u4e00-\u9fa5]{1,3}乡)?(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?)`)
-	P_TOWN3 = regexp.MustCompile(`^(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?`)
+	//P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
+	//P_TOWN2 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{1,3}镇)?(?P<x>[\u4e00-\u9fa5]{1,3}乡)?(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?)`)
+	//P_TOWN3 = regexp.MustCompile(`^(?P<c>[\u4e00-\u9fa5]{1,3}村(?!(村|委|公路|(东|西|南|北)?(大街|大道|路|街))))?`)
 
 	invalidTown           = make(map[string]struct{})
 	invalidTownFollowings = make(map[string]struct{})
@@ -199,15 +200,18 @@ func (ai AddressInterpreter) interpret(entity *Address, visitor index.TermIndexV
 	// 提取道路信息
 	ai.extractRoad(entity)
 
-	/**
-	  entity.text = entity.text!!.replace("[0-9A-Za-z\\#]+(单元|楼|室|层|米|户|\\#)", "")
-	  entity.text = entity.text!!.replace("[一二三四五六七八九十]+(单元|楼|室|层|米|户)", "")
-	  if (brackets.isNotEmpty()) {
-	      entity.text = entity.text + brackets
-	      // 如果没有道路信息, 可能存在于 Brackets 中
-	      if (entity.road.isNullOrBlank()) extractRoad(entity)
-	  }
-	*/
+	// TODO
+
+	// ai.extractTownVillage(entity)
+
+	entity.AddressText = regexp.MustCompile(`[0-9A-Za-z\\#]+(单元|楼|室|层|米|户|\\#)`).ReplaceAllString(entity.AddressText, "")
+	entity.AddressText = regexp.MustCompile(`[一二三四五六七八九十]+(单元|楼|室|层|米|户)`).ReplaceAllString(entity.AddressText, "")
+	if len(brackets) != 0 {
+		entity.AddressText = entity.AddressText + brackets
+		if len(entity.RoadText) != 0 { // 如果没有道路信息, 可能存在于 Brackets 中
+			ai.extractRoad(entity)
+		}
+	}
 }
 
 func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []Address {
@@ -464,12 +468,16 @@ func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.Ter
 	}
 }
 
+// TODO
+
 func (ai AddressInterpreter) extractRoad(entity *Address) {
 	// 如果已经提取过了
 	if len(entity.AddressText) == 0 || len(entity.RoadText) > 0 {
 		return
 	}
-
+	matches := reROAD.FindStringSubmatch(entity.AddressText)
+	lastIndex := reROAD.SubexpIndex("road")
+	fmt.Println(matches[lastIndex])
 	/**
 	  val matcher = P_ROAD.matcher(entity.text)
 	  if (matcher.find()) {
