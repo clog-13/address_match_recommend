@@ -7,14 +7,14 @@ type AddressPersister struct {
 	RegionTree *Region
 
 	// 按区域ID缓存的全部区域对象。
-	RegionCache map[int64]*Region
+	RegionCache map[uint]*Region
 
 	RegionLoaded              bool
-	AddressIndexByHash        map[int64]struct{}
+	AddressIndexByHash        map[uint]struct{}
 	AddressIndexByHashCreated bool
 }
 
-func (ap AddressPersister) GetRegion(id int64) *Region {
+func (ap AddressPersister) GetRegion(id uint) *Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}
@@ -23,6 +23,7 @@ func (ap AddressPersister) GetRegion(id int64) *Region {
 	//}
 	return ap.RegionCache[id]
 }
+
 func (ap AddressPersister) loadRegions() {
 	if ap.RegionLoaded {
 		return
@@ -31,7 +32,7 @@ func (ap AddressPersister) loadRegions() {
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region` where id=1
 	ap.RegionTree = nil
 
-	ap.RegionCache = make(map[int64]*Region)
+	ap.RegionCache = make(map[uint]*Region)
 	ap.RegionCache[ap.RegionTree.ID] = ap.RegionTree
 	ap.loadRegionChildren(ap.RegionTree)
 	ap.RegionLoaded = true

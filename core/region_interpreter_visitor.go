@@ -17,8 +17,8 @@ type RegionInterpreterVisitor struct {
 	CurrentPos, DeepMostPos                int
 	FullMatchCount, DeepMostFullMatchCount int
 
-	DeepMostDivision Division
-	CurDivision      Division
+	DeepMostDivision Address
+	CurDivision      Address
 
 	stack []*index.TermIndexItem
 }
@@ -377,7 +377,7 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 
 // TODO
 
-func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId int64) {
+func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
 	if riv.CurDivision.City == nil {
 		riv.CurDivision.City = persister.GetRegion(parentId)
 		if riv.CurDivision.Province == nil {

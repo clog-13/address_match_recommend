@@ -2,38 +2,47 @@ package test
 
 import (
 	. "address_match_recommend/models"
+	"fmt"
 	"testing"
 )
 
 func TestInsertAddress(t *testing.T) {
 	addr := &Address{
-		AddressText: "_clog_addr",
-		Road:        "_clog_addr",
-		RoadNum:     "_clog_addr",
-		BuildingNum: "_clog_addr",
+		AddressText: "<>clog<>addr",
+		RoadText:    "<>clog<>addr",
+		RoadNum:     "<>clog<>addr",
+		BuildingNum: "<>clog<>addr",
+		ProvinceId:  29,
+		TownId:      22,
 	}
-	addr.Div = Division{}
-	addr.Div.Province = &Region{
-		Name:         "_clog_d_p",
-		Alias:        "_clog_d_p",
-		Types:        13,
-		Children:     make([]*Region, 0),
-		OrderedNames: make([]string, 0),
+
+	addr.Province = &Region{
+		DivisionID: 29,
+		Name:       "<>clog<>d<>p",
+		Alias:      "<>clog<>d<>p",
 	}
-	addr.Div.Province.Children = append(addr.Div.Province.Children, &Region{
+	addr.Province.Children = append(addr.Province.Children, &Region{
 		Name:  "pc",
 		Alias: "pc",
 	})
-	addr.Div.Province.Children = append(addr.Div.Province.Children, &Region{
+	addr.Province.Children = append(addr.Province.Children, &Region{
 		Name:  "pc1",
 		Alias: "pc1",
 	})
-	addr.Div.Town = &Region{
-		Name:         "_clog_d_t",
-		Alias:        "_clog_d_t",
-		Types:        13,
-		Children:     make([]*Region, 0),
-		OrderedNames: make([]string, 0),
+
+	addr.Town = &Region{
+		DivisionID: 22,
+		Name:       "<>clog<>d<>t",
+		Alias:      "<>clog<>d<>t",
 	}
 	DB.Create(addr)
+}
+
+func TestQueryAddress(t *testing.T) {
+	var addrs []Address
+	//DB.Preload(clause.Associations).Find(&addrs)
+	DB.Preload("Province").Preload("Town").Find(&addrs)
+	fmt.Println(addrs[0])
+	fmt.Println(addrs[0].Province)
+	fmt.Println(addrs[0].Town)
 }

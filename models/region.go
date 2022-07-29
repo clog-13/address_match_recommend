@@ -7,16 +7,17 @@ import (
 
 // Region 行政区域实体
 type Region struct {
-	ID uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
+	ID         uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
+	DivisionID uint
+	
+	ParentID uint       `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
+	Name     string     `gorm:"type:string;comment:区域名称" json:"region_name"`
+	Alias    string     `gorm:"type:string;comment:区域别名" json:"region_alias"`
+	Types    RegionEnum `gorm:"type:SMALLINT;comment:区域类型" json:"region_types"`
 
-	Name  string     `gorm:"type:string;comment:区域名称" json:"region_name"`
-	Alias string     `gorm:"type:string;comment:区域别名" json:"region_alias"`
-	Types RegionEnum `gorm:"type:uint;comment:区域类型" json:"region_types"`
-
-	DivisionID   uint
-	ParentID     uint           `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
-	Children     []*Region      `gorm:"foreignkey:ParentID" json:"region_children"`
-	OrderedNames pq.StringArray `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
+	Children     []*Region      `gorm:"-"`
+	OrderedNames pq.StringArray `gorm:"-"`
+	//_varchar OrderedNames pq.StringArray `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
 }
 
 func (r Region) IsTown() bool {
@@ -82,8 +83,8 @@ func (r Region) buildOrderedNameAndAlias() {
 }
 
 func (r *Region) Equal(t *Region) bool {
-	return r.ParentID == t.ParentID && r.Name == t.Name && r.Alias == t.Alias &&
-		r.Types == t.Types
+	return r.ParentID == t.ParentID && r.Name == t.Name &&
+		r.Alias == t.Alias && r.Types == t.Types
 }
 
 func (r *Region) TableName() string {

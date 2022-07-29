@@ -1,22 +1,8 @@
 package models
 
-type TermEnum byte
 type RegionEnum int
 
 const (
-	UndefinedTerm = '0'
-	ProvinceTerm  = '1'
-	CityTerm      = '2'
-	DistrictTerm  = '3'
-	StreetTerm    = '4'
-	TownTerm      = 'T'
-	VillageTerm   = 'V'
-	RoadTerm      = 'R'
-	RoadNumTerm   = 'N'
-	TextTerm      = 'X'
-	IgnoreTerm    = 'I'
-
-	UndefinedRegion    = 0
 	CountryRegion      = 10
 	ProvinceRegion     = 100
 	ProvinceLevelCity1 = 150

@@ -3,7 +3,6 @@ package core
 import (
 	. "address_match_recommend/models"
 	"address_match_recommend/segment"
-	. "address_match_recommend/similarity"
 	"address_match_recommend/utils"
 	"math"
 	"strconv"
@@ -20,7 +19,7 @@ var (
 	MissingIdf = 4.0
 
 	interpreter AddressInterpreter
-	segmenter   = new(segment.SimpleSegmenter)
+	segmenter   = segment.NewSegment("simple")
 
 	CacheVectorsInMemory = false
 	VectorsCache         = make(map[string][]Document)
@@ -102,16 +101,16 @@ func analyse(addr *Address) Document {
 	terms := make([]*Term, 0) // 预分配空间 TODO
 
 	// 生成term
-	if addr.Div.Town != nil {
-		doc.Town = NewTerm(TownTerm, addr.Div.Town.Name)
+	if addr.Town != nil {
+		doc.Town = NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
-	if addr.Div.Village != nil {
-		doc.Village = NewTerm(VillageTerm, addr.Div.Village.Name)
+	if addr.Village != nil {
+		doc.Village = NewTerm(VillageTerm, addr.Village.Name)
 		terms = append(terms, doc.Village)
 	}
-	if len(addr.Road) > 0 {
-		doc.Road = NewTerm(RoadTerm, addr.Road)
+	if len(addr.RoadText) > 0 {
+		doc.Road = NewTerm(RoadTerm, addr.RoadText)
 		terms = append(terms, doc.Road)
 	}
 	if len(addr.RoadNum) > 0 {
@@ -567,13 +566,13 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 }
 
 func buildCacheKey(address *Address) string {
-	if address == nil || address.Div.Province != nil || address.Div.City != nil {
+	if address == nil || address.Province != nil || address.City != nil {
 		return ""
 	}
 
-	res := strconv.Itoa(int(address.Div.Province.ID)) + "-" + strconv.Itoa(int(address.Div.City.ID))
-	if address.Div.City.Children != nil {
-		res += "-" + strconv.Itoa(int(address.Div.District.ID))
+	res := strconv.Itoa(int(address.Province.ID)) + "-" + strconv.Itoa(int(address.City.ID))
+	if address.City.Children != nil {
+		res += "-" + strconv.Itoa(int(address.District.ID))
 	}
 	return res
 }

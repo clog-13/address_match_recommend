@@ -1,19 +1,11 @@
-package similarity
-
-import "address_match_recommend/models"
+package models
 
 type Query struct {
 	TopN      int
-	QueryAddr models.Address
-	QueryDoc  models.Document
+	QueryAddr Address
+	QueryDoc  Document
 
 	SimiDocs []*SimilarDocument
-}
-
-func NewQuery(topN int) *Query {
-	return &Query{
-		TopN: topN,
-	}
 }
 
 // AddSimiDoc 添加一个相似文档, 只保留相似度最高的top N条相似文档,相似度最低的从simiDocs中删除
@@ -41,21 +33,21 @@ func (q Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
 	return false
 }
 
-func (q Query) AddSimiDocs(doc models.Document, similarity float64) bool {
-	if similarity <= 0 {
+func (q Query) AddSimiDocs(doc Document, simi float64) bool {
+	if simi <= 0 {
 		return false
 	}
 	if q.SimiDocs == nil {
 		q.SimiDocs = make([]*SimilarDocument, q.TopN)
 		simiDoc := NewSimilarDocument(doc)
-		simiDoc.Similarity = similarity
+		simiDoc.Similarity = simi
 		q.SimiDocs = append(q.SimiDocs, simiDoc)
 		return true
 	}
-	if q.SimiDocs[0].Similarity < similarity {
+	if q.SimiDocs[0].Similarity < simi {
 	}
 	simiDoc := NewSimilarDocument(doc)
-	simiDoc.Similarity = similarity
+	simiDoc.Similarity = simi
 	q.SimiDocs[0] = simiDoc
 	return true
 }
