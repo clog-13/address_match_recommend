@@ -15,7 +15,7 @@ type RegionInterpreterVisitor struct {
 
 	CurrentLevel, DeepMostLevel            int
 	CurrentPos, DeepMostPos                int
-	FullMatchCount, DeepMostFullMatchCount int
+	fullMatchCount, DeepMostFullMatchCount int
 
 	DeepMostDivision Address
 	CurDivision      Address
@@ -49,7 +49,7 @@ func (riv *RegionInterpreterVisitor) Visit(entry *index.TermIndexEntry, text str
 	region := acceptableItem.Value
 	riv.stack = append(riv.stack, acceptableItem)
 	if isFullMatch(entry, region) { // 使用全名匹配的词条数
-		riv.FullMatchCount++
+		riv.fullMatchCount++
 	}
 	riv.CurrentPos = riv.positioning(region, entry, text, pos) // 当前结束的位置
 	riv.updateCurrentDivisionState(region, entry)              // 刷新当前已经匹配上的省市区
@@ -394,8 +394,84 @@ func (riv RegionInterpreterVisitor) PositionAfterAcceptItem() int {
 	return riv.CurrentPos
 }
 
-func (riv RegionInterpreterVisitor) EndVisit(entry *index.TermIndexEntry, text string, pos int) {
+func (riv RegionInterpreterVisitor) EndVisit(entry *index.TermIndexEntry, pos int) {
+	riv.checkDeepMost()
 
+	indexTerm := riv.stack[len(riv.stack)-1] // 当前访问的索引对象出栈
+	riv.stack = riv.stack[:len(riv.stack)-1]
+	riv.CurrentPos = pos - len(entry.Key) // 恢复当前位置指针
+
+	if isFullMatch(entry, indexTerm.Value) {
+		riv.fullMatchCount++ // 更新全名匹配的数量
+	}
+	if indexTerm.Types == IgnoreTerm { // 如果是忽略项，无需更新当前已匹配的省市区状态
+		return
+	}
+
+	// 扫描一遍stack，找出街道street、乡镇town、村庄village，以及省市区中级别最低的一个least
+	var street, town, village, least *Region
+loop:
+	for _, v := range riv.stack {
+		if v.Types == IgnoreTerm {
+			continue
+		}
+		r := v.Value
+		switch r.Types {
+		case StreetRegion:
+		case PlatformL4:
+			street = r
+			continue loop
+		case TownRegion:
+			town = r
+			continue loop
+		case VillageRegion:
+			village = r
+			continue loop
+		}
+		if least == nil {
+			least = r
+			continue loop
+		}
+		if r.Types > least.Types {
+			least = r
+		}
+	}
+
+	if street == nil {
+		riv.CurDivision.Street = nil // 剩余匹配项中没有街道了
+	}
+	if town == nil {
+		riv.CurDivision.Town = nil // 剩余匹配项中没有乡镇了
+	}
+	if village == nil {
+		riv.CurDivision.Village = nil // 剩余匹配项中没有村庄了
+	}
+
+	// 只有街道、乡镇、村庄都没有时，才开始清空省市区
+	if riv.CurDivision.Street != nil || riv.CurDivision.Town != nil || riv.CurDivision.Village != nil {
+		return
+	}
+
+	if least != nil {
+		switch least.Types {
+		case ProvinceRegion:
+		case ProvinceLevelCity1:
+			riv.CurDivision.City = nil
+			riv.CurDivision.District = nil
+			return
+		case CityRegion:
+		case ProvinceLevelCity2:
+			riv.CurDivision.District = nil
+			return
+		default:
+			return
+		}
+	}
+
+	// least为null，说明stack中什么都不剩了
+	riv.CurDivision.Province = nil
+	riv.CurDivision.City = nil
+	riv.CurDivision.District = nil
 }
 
 func (riv RegionInterpreterVisitor) EndRound() {
@@ -407,7 +483,7 @@ func (riv RegionInterpreterVisitor) checkDeepMost() {
 	if len(riv.stack) > riv.DeepMostLevel {
 		riv.DeepMostLevel = len(riv.stack)
 		riv.DeepMostPos = riv.CurrentPos
-		riv.DeepMostFullMatchCount = riv.FullMatchCount
+		riv.DeepMostFullMatchCount = riv.fullMatchCount
 		riv.DeepMostDivision.Province = riv.CurDivision.Province
 		riv.DeepMostDivision.City = riv.CurDivision.City
 		riv.DeepMostDivision.District = riv.CurDivision.District
@@ -415,4 +491,45 @@ func (riv RegionInterpreterVisitor) checkDeepMost() {
 		riv.DeepMostDivision.Town = riv.CurDivision.Town
 		riv.DeepMostDivision.Village = riv.CurDivision.Village
 	}
+}
+
+func (riv RegionInterpreterVisitor) HasResult() bool {
+	return riv.DeepMostPos > 0 && riv.DeepMostDivision.District != nil
+}
+
+func (riv RegionInterpreterVisitor) GetDevision() Address {
+	return riv.DeepMostDivision
+}
+
+func (riv RegionInterpreterVisitor) MatchCount() int {
+	return riv.DeepMostLevel
+}
+
+func (riv RegionInterpreterVisitor) FullMatchCount() int {
+	return riv.DeepMostFullMatchCount
+}
+
+func (riv RegionInterpreterVisitor) EndPosition() int {
+	return riv.DeepMostPos
+}
+
+func (riv RegionInterpreterVisitor) Reset() {
+	riv.CurrentLevel = 0
+	riv.DeepMostLevel = 0
+	riv.CurrentPos = -1
+	riv.DeepMostPos = -1
+	riv.fullMatchCount = 0
+	riv.DeepMostFullMatchCount = 0
+	riv.DeepMostDivision.Province = nil
+	riv.DeepMostDivision.City = nil
+	riv.DeepMostDivision.District = nil
+	riv.DeepMostDivision.Street = nil
+	riv.DeepMostDivision.Town = nil
+	riv.DeepMostDivision.Village = nil
+	riv.CurDivision.Province = nil
+	riv.CurDivision.City = nil
+	riv.CurDivision.District = nil
+	riv.CurDivision.Street = nil
+	riv.CurDivision.Town = nil
+	riv.CurDivision.Village = nil
 }

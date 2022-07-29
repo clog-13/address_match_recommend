@@ -64,7 +64,7 @@ type AddressInterpreter struct {
 	indexBuilder index.TermIndexBuilder
 }
 
-func NewAddressInterpreter(persister AddressPersister, visitor TermIndexVisitor) *AddressInterpreter {
+func NewAddressInterpreter(persister AddressPersister, visitor index.TermIndexVisitor) *AddressInterpreter {
 	return &AddressInterpreter{
 		indexBuilder: index.NewTermIndexBuilder(persister, ignoringRegionNames),
 	}
@@ -76,7 +76,7 @@ func (ai AddressInterpreter) Interpret(entity *Address) {
 	ai.interpret(entity, visitor)
 }
 
-func (ai AddressInterpreter) interpret(entity *Address, visitor TermIndexVisitor) {
+func (ai AddressInterpreter) interpret(entity *Address, visitor index.TermIndexVisitor) {
 	// 清洗下开头垃圾数据, 针对用户数据
 	ai.prepare(entity)
 	// 提取建筑物号
@@ -91,8 +91,8 @@ func (ai AddressInterpreter) interpret(entity *Address, visitor TermIndexVisitor
 
 	// 提取行政规划标准地址
 	ai.extractRegion(entity, visitor)
-	//// 规整省市区街道等匹配的结果
-	//removeRedundancy(entity, visitor)
+	// 规整省市区街道等匹配的结果
+	ai.removeRedundancy(entity, visitor)
 	//// 提取道路信息
 	//extractRoad(entity)
 
@@ -289,26 +289,85 @@ func (ai AddressInterpreter) extractBrackets(entity *Address) string {
 }
 
 // 提取行政规划标准地址
-func (ai AddressInterpreter) extractRegion(entiy *Address, visitor TermIndexVisitor) {
-	if len(entiy.AddressText) == 0 {
+func (ai AddressInterpreter) extractRegion(entity *Address, visitor index.TermIndexVisitor) {
+	if len(entity.AddressText) == 0 {
 		return
 	}
-	visitor.EndRound()
+
 	// 开始匹配
+	visitor.Reset()
+	ai.indexBuilder.DeepMostQuery(entity.AddressText, visitor)
+	entity.Province = visitor.GetDevision().Province
+	entity.City = visitor.GetDevision().City
+	entity.District = visitor.GetDevision().District
+	entity.Street = visitor.GetDevision().Street
+	entity.Town = visitor.GetDevision().Town
+	entity.Village = visitor.GetDevision().Village
+	entity.AddressText = entity.AddressText[visitor.EndPosition()+1:]
+}
 
+// 规整省市区街道等匹配的结果
+func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.TermIndexVisitor) {
+	if len(entity.AddressText) == 0 || entity.Province == nil || entity.City == nil {
+		return
+	}
+	var removed bool
+	// 采用后序数组方式匹配省市区
+	endIndex := len(entity.AddressText) - 2
+	var i int
+	for i < endIndex {
+		visitor.Reset()
+		ai.indexBuilder.DeepPosMostQuery(entity.AddressText, i, visitor)
+		// 没有匹配上，或者匹配上的行政区域个数少于2个认当做无效匹配
+		if visitor.MatchCount() < 2 || visitor.FullMatchCount() < 1 {
+			i++
+			continue
+		}
+		// 匹配上的省份、地级市不正确
+		if entity.Province != visitor.GetDevision().Province || entity.City != visitor.GetDevision().City {
+			i++
+			continue
+		}
+
+		devision := visitor.GetDevision() // 正确匹配
+		// 修复 区 信息
+		if entity.District == nil && devision.District != nil && devision.District.ParentID == entity.City.ID {
+			entity.District = devision.District
+		}
+		// 修复 街道 信息
+		if entity.District != nil && entity.Street == nil && devision.Street != nil &&
+			devision.Street.ParentID == entity.District.ID {
+			entity.Street = devision.Street
+		}
+		// 修复 乡镇 信息
+		if entity.District != nil && entity.Town == nil && devision.Town != nil &&
+			devision.Town.ParentID == entity.District.ID {
+			entity.Town = devision.Town
+		} else if entity.District != nil && entity.Town != nil && entity.Town.Equal(entity.Street) &&
+			devision.Town != nil && !devision.Town.Equal(devision.Street) &&
+			devision.Town.ParentID == entity.District.ID {
+			entity.Town = devision.Town
+		}
+	}
 	/**
-	  	        if (entity.text.isNullOrBlank()) return false
+	      // > 修复乡镇信息
+	      if (entity.hasDistrict() && !entity.hasTown()
+	              && devision.hasTown() && devision.town!!.parentId == entity.district!!.id)
+	          entity.town = devision.town
+	      else if (entity.hasDistrict() && entity.hasTown() && entity.town!! == entity.street
+	              && devision.hasTown()
+	              && devision.town!! != devision.street
+	              && devision.town!!.parentId == entity.district!!.id)
+	          entity.town = devision.town
+	      if (entity.hasDistrict() && !entity.hasVillage() && devision.hasVillage()
+	              && devision.village!!.parentId == entity.district!!.id)
+	          entity.village = devision.village
 
-	            // 开始匹配
-	            visitor.reset()
-	            indexBuilder!!.deepMostQuery(entity.text, visitor)
-	            entity.province = visitor.devision().province
-	            entity.city = visitor.devision().city
-	            entity.district = visitor.devision().district
-	            entity.street = visitor.devision().street
-	            entity.town = visitor.devision().town
-	            entity.village = visitor.devision().village
-	            entity.text = entity.text!!.take(visitor.endPosition() + 1)
-	            return visitor.hasResult()
+	      // 正确匹配上，删除
+	      entity.text = entity.text!!.take(visitor.endPosition() + 1)
+	      endIndex = entity.text!!.length
+	      i = 0
+	      removed = true
+	  }
 	*/
 }

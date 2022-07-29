@@ -20,7 +20,7 @@ func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []
 }
 
 // 为行政区划建立倒排索引
-func (tib TermIndexBuilder) indexRegions(regions *[]*Region) {
+func (tib *TermIndexBuilder) indexRegions(regions *[]*Region) {
 	if len(*regions) == 0 {
 		return
 	}
@@ -71,12 +71,57 @@ func (tib TermIndexBuilder) indexRegions(regions *[]*Region) {
 }
 
 // 为忽略列表建立倒排索引
-func (tib TermIndexBuilder) indexIgnoring(ignoreList []string) {
+func (tib *TermIndexBuilder) indexIgnoring(ignoreList []string) {
 	if len(ignoreList) == 0 {
 		return
 	}
 	for _, v := range ignoreList {
 		tib.indexRoot.BuildIndex(v, 0, NewTermIndexItem(IgnoreTerm, nil))
+	}
+}
+
+// DeepMostQuery 深度优先匹配词条
+func (tib *TermIndexBuilder) DeepMostQuery(text string, visitor TermIndexVisitor) {
+	if len(text) == 0 {
+		return
+	}
+	var pos int
+	if strings.HasPrefix(text, "中国") || strings.HasPrefix(text, "天朝") {
+		pos += 2
+	}
+	tib.DeepPosMostQuery(text, pos, visitor)
+}
+
+func (tib *TermIndexBuilder) DeepPosMostQuery(text string, pos int, visitor TermIndexVisitor) {
+	if len(text) == 0 {
+		return
+	}
+	// 开始匹配
+	visitor.StartRound()
+	tib.deepFirstQueryRound(text, pos, visitor)
+	visitor.EndRound()
+}
+
+func (tib *TermIndexBuilder) deepFirstQueryRound(text string, pos int, visitor TermIndexVisitor) {
+	// 获取索引对象
+	if pos > len(text)-1 {
+		return
+	}
+	entry, ok := tib.indexRoot.Children[text[pos]]
+	if !ok {
+		return
+	}
+	if pos+1 <= len(text)-1 {
+		tib.deepFirstQueryRound(text, pos+1, visitor)
+	}
+	if len(entry.Items) > 0 {
+		if visitor.Visit(entry, text, pos) {
+			p := visitor.PositionAfterAcceptItem()
+			if p+1 <= len(text)-1 {
+				tib.DeepPosMostQuery(text, p+1, visitor)
+			}
+			visitor.EndVisit(entry, p)
+		}
 	}
 }
 
