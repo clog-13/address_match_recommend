@@ -1,9 +1,9 @@
 package index
 
 import (
-	"address_match_recommend/core"
-	. "address_match_recommend/models"
-	"address_match_recommend/utils"
+	"github.com/xiiv13/address_match_recommend/core"
+	. "github.com/xiiv13/address_match_recommend/models"
+	"github.com/xiiv13/address_match_recommend/utils"
 	"strings"
 )
 

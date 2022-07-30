@@ -1,9 +1,9 @@
 package main
 
 import (
-	"address_match_recommend/core"
-	"address_match_recommend/utils"
 	"fmt"
+	"github.com/xiiv13/address_match_recommend/core"
+	"github.com/xiiv13/address_match_recommend/utils"
 	"strings"
 )
 

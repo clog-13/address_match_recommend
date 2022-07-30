@@ -1,6 +1,6 @@
 package core
 
-import . "address_match_recommend/models"
+import . "github.com/xiiv13/address_match_recommend/models"
 
 type AddressPersister struct {
 	// REGION_TREE为中国国家区域对象，全国所有行政区域都以树状结构加载到REGION_TREE, 通过{@link Region#getChildren()}获取下一级列表

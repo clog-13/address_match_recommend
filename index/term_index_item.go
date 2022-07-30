@@ -1,7 +1,7 @@
 package index
 
 import (
-	. "address_match_recommend/models"
+	. "github.com/xiiv13/address_match_recommend/models"
 )
 
 // TermIndexItem 索引对象

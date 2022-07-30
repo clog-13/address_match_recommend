@@ -1,7 +1,7 @@
 package test
 
 import (
-	. "address_match_recommend/models"
+	. "github.com/xiiv13/address_match_recommend/models"
 	"testing"
 )
 

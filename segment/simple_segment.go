@@ -10,8 +10,7 @@ func (s SimpleSegmenter) Segment(text string) []string {
 	}
 	tokens := make([]string, 0)
 	var digitNum, ansiCharNum int
-	for i := 0; i < len(text); i++ {
-		c := text[i]
+	for i, c := range text {
 		if c >= '0' && c <= '9' {
 			if ansiCharNum > 0 {
 				tokens = append(tokens, text[i-ansiCharNum:i])

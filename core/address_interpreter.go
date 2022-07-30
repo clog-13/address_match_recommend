@@ -1,10 +1,9 @@
 package core
 
 import (
-	"address_match_recommend/index"
-	. "address_match_recommend/models"
-	"address_match_recommend/utils"
-	"fmt"
+	"github.com/xiiv13/address_match_recommend/index"
+	. "github.com/xiiv13/address_match_recommend/models"
+	"github.com/xiiv13/address_match_recommend/utils"
 	"regexp"
 	"strings"
 )
@@ -19,7 +18,6 @@ var (
 		"省直辖", "省直辖市县",
 		// 其他
 		"地区", "市区"}
-	persister AddressPersister
 
 	// 特殊字符1
 	specialChars1 = []byte("　 \r\n\t,，。·.．;；:：、！@$%*^`~=+&'\"|_-\\/")
@@ -167,7 +165,7 @@ type AddressInterpreter struct {
 	indexBuilder index.TermIndexBuilder
 }
 
-func NewAddressInterpreter(persister AddressPersister, visitor index.TermIndexVisitor) *AddressInterpreter {
+func NewAddressInterpreter(persister AddressPersister) *AddressInterpreter {
 	return &AddressInterpreter{
 		indexBuilder: index.NewTermIndexBuilder(persister, ignoringRegionNames),
 	}
@@ -175,6 +173,7 @@ func NewAddressInterpreter(persister AddressPersister, visitor index.TermIndexVi
 
 // Interpret 将地址进行标准化处理, 解析成 Address
 func (ai AddressInterpreter) Interpret(entity *Address) {
+
 	visitor := NewRegionInterpreterVisitor(persister)
 	ai.interpret(entity, visitor)
 }
@@ -468,41 +467,34 @@ func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.Ter
 	}
 }
 
-// TODO
-
 func (ai AddressInterpreter) extractRoad(entity *Address) {
 	// 如果已经提取过了
 	if len(entity.AddressText) == 0 || len(entity.RoadText) > 0 {
 		return
 	}
 	matches := reROAD.FindStringSubmatch(entity.AddressText)
-	lastIndex := reROAD.SubexpIndex("road")
-	fmt.Println(matches[lastIndex])
-	/**
-	  val matcher = P_ROAD.matcher(entity.text)
-	  if (matcher.find()) {
-	      val road = matcher.group("road")
-	      val ex = matcher.group("ex")
-	      var roadNum: String? = matcher.group("roadnum")
-	      roadNum = (ex ?: "") + if (roadNum == null) "" else roadNum
-	      val leftText = entity.text!!.take(road.length + roadNum.length)
-	      if (leftText.startsWith("小区")) return false
-	      entity.road = fixRoad(road)
-	      // 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
-	      if (roadNum.length == 1) {
-	          entity.text = roadNum + leftText
-	      } else {
-	          entity.roadNum = roadNum
-	          entity.text = leftText
-	      }
-	      // 修复road中存在building的问题
-	      if (entity.buildingNum.isNullOrBlank()) {
-	          fixRoadBuilding(entity)
-	      }
-	      return true
-	  }
-	  return false
-	*/
+	if len(matches) > 0 {
+		road := matches[reROAD.SubexpIndex("road")]
+		ex := matches[reROAD.SubexpIndex("ex")]
+		roadNum := ex + matches[reROAD.SubexpIndex("roadnum")]
+
+		leftText := entity.AddressText[len(road)+len(roadNum):]
+		if strings.HasPrefix(leftText, "小区") {
+			return
+		}
+		entity.RoadText = fixRoad(road)
+		// 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
+		if len(roadNum) == 1 {
+			entity.AddressText = roadNum + leftText
+		} else {
+			entity.RoadNum = roadNum
+			entity.AddressText = leftText
+		}
+		// 修复road中存在building的问题
+		if len(entity.BuildingNum) == 0 {
+			fixRoadBuilding(entity)
+		}
+	}
 }
 
 func fixRoad(road string) string {

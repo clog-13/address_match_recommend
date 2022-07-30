@@ -1,9 +1,10 @@
 package core
 
 import (
-	. "address_match_recommend/models"
-	"address_match_recommend/segment"
-	"address_match_recommend/utils"
+	"fmt"
+	. "github.com/xiiv13/address_match_recommend/models"
+	"github.com/xiiv13/address_match_recommend/segment"
+	"github.com/xiiv13/address_match_recommend/utils"
 	"math"
 	"strconv"
 	"strings"
@@ -556,6 +557,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		return 0
 	}
 	s := sumQD / (math.Sqrt(sumQQ * sumDD))
+	fmt.Println(s)
 	if explain && topN > 1 {
 		simiDoc.Similarity = s
 		query.AddSimiDoc(simiDoc)

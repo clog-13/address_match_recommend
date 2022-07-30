@@ -1,8 +1,8 @@
 package core
 
 import (
-	"address_match_recommend/index"
-	. "address_match_recommend/models"
+	"github.com/xiiv13/address_match_recommend/index"
+	. "github.com/xiiv13/address_match_recommend/models"
 	"strings"
 )
 
@@ -23,11 +23,12 @@ type RegionInterpreterVisitor struct {
 	stack []*index.TermIndexItem
 }
 
-func NewRegionInterpreterVisitor(ap AddressPersister) *RegionInterpreterVisitor {
+func NewRegionInterpreterVisitor(ap AddressPersister, strict bool) *RegionInterpreterVisitor {
 	newRiv := &RegionInterpreterVisitor{
 		CurrentPos:  -1,
 		DeepMostPos: -1,
 		Persister:   ap,
+		strict:      strict,
 	}
 	newRiv.AmbiguousChars["市"] = struct{}{}
 	newRiv.AmbiguousChars["县"] = struct{}{}
@@ -250,7 +251,7 @@ loop:
 	return acceptableItem
 }
 
-func (riv RegionInterpreterVisitor) positioning(
+func (riv *RegionInterpreterVisitor) positioning(
 	acceptedRegion *Region, entry *index.TermIndexEntry, text string, pos int) int {
 	//需要调整指针的情况
 	//1. 山东泰安肥城市桃园镇桃园镇山东省泰安市肥城县桃园镇东伏村
@@ -299,14 +300,14 @@ func isFullMatch(entry *index.TermIndexEntry, region *Region) bool {
 	return false
 }
 
-func (riv RegionInterpreterVisitor) hasThreeDivision() bool {
+func (riv *RegionInterpreterVisitor) hasThreeDivision() bool {
 	return riv.CurDivision.City.ParentID == riv.CurDivision.Province.ID &&
 		riv.CurDivision.District.ParentID == riv.CurDivision.City.ID
 
 }
 
 // 更新当前已匹配区域对象的状态
-func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
+func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 	region *Region, entry *index.TermIndexEntry) {
 	// region为重复项，无需更新状态
 	if region.Equal(riv.CurDivision.Province) || region.Equal(riv.CurDivision.City) ||
@@ -377,7 +378,7 @@ func (riv RegionInterpreterVisitor) updateCurrentDivisionState(
 
 // TODO
 
-func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
+func (riv *RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
 	if riv.CurDivision.City == nil {
 		riv.CurDivision.City = persister.GetRegion(parentId)
 		if riv.CurDivision.Province == nil {
@@ -386,7 +387,7 @@ func (riv RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
 	}
 }
 
-func (riv RegionInterpreterVisitor) StartRound() {
+func (riv *RegionInterpreterVisitor) StartRound() {
 	riv.CurrentLevel++
 }
 
@@ -497,23 +498,23 @@ func (riv RegionInterpreterVisitor) HasResult() bool {
 	return riv.DeepMostPos > 0 && riv.DeepMostDivision.District != nil
 }
 
-func (riv RegionInterpreterVisitor) GetDevision() Address {
+func (riv *RegionInterpreterVisitor) GetDevision() Address {
 	return riv.DeepMostDivision
 }
 
-func (riv RegionInterpreterVisitor) MatchCount() int {
+func (riv *RegionInterpreterVisitor) MatchCount() int {
 	return riv.DeepMostLevel
 }
 
-func (riv RegionInterpreterVisitor) FullMatchCount() int {
+func (riv *RegionInterpreterVisitor) FullMatchCount() int {
 	return riv.DeepMostFullMatchCount
 }
 
-func (riv RegionInterpreterVisitor) EndPosition() int {
+func (riv *RegionInterpreterVisitor) EndPosition() int {
 	return riv.DeepMostPos
 }
 
-func (riv RegionInterpreterVisitor) Reset() {
+func (riv *RegionInterpreterVisitor) Reset() {
 	riv.CurrentLevel = 0
 	riv.DeepMostLevel = 0
 	riv.CurrentPos = -1
