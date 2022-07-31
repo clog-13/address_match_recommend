@@ -8,14 +8,14 @@ import (
 
 // RegionInterpreterVisitor 基于倒排索引搜索匹配 省市区行政区划的访问者
 type RegionInterpreterVisitor struct {
-	IsDebug        bool
-	AmbiguousChars map[string]struct{}
-	Persister      AddressPersister
+	Persister AddressPersister
+
+	ambiguousChars map[string]struct{}
 	strict         bool
 
 	CurrentLevel, DeepMostLevel            int
-	CurrentPos, DeepMostPos                int
-	fullMatchCount, DeepMostFullMatchCount int
+	currentPos, deepMostPos                int
+	fullMatchCount, deepMostFullMatchCount int
 
 	DeepMostDivision Address
 	CurDivision      Address
@@ -25,18 +25,22 @@ type RegionInterpreterVisitor struct {
 
 func NewRegionInterpreterVisitor(ap AddressPersister, strict bool) *RegionInterpreterVisitor {
 	newRiv := &RegionInterpreterVisitor{
-		CurrentPos:  -1,
-		DeepMostPos: -1,
 		Persister:   ap,
+		currentPos:  -1,
+		deepMostPos: -1,
 		strict:      strict,
 	}
-	newRiv.AmbiguousChars["市"] = struct{}{}
-	newRiv.AmbiguousChars["县"] = struct{}{}
-	newRiv.AmbiguousChars["区"] = struct{}{}
-	newRiv.AmbiguousChars["镇"] = struct{}{}
-	newRiv.AmbiguousChars["乡"] = struct{}{}
+	newRiv.ambiguousChars["市"] = struct{}{}
+	newRiv.ambiguousChars["县"] = struct{}{}
+	newRiv.ambiguousChars["区"] = struct{}{}
+	newRiv.ambiguousChars["镇"] = struct{}{}
+	newRiv.ambiguousChars["乡"] = struct{}{}
 
 	return newRiv
+}
+
+func (riv *RegionInterpreterVisitor) StartRound() {
+	riv.CurrentLevel++
 }
 
 func (riv *RegionInterpreterVisitor) Visit(entry *index.TermIndexEntry, text string, pos int) bool {
@@ -46,13 +50,14 @@ func (riv *RegionInterpreterVisitor) Visit(entry *index.TermIndexEntry, text str
 		return false
 	}
 
-	// acceptableItem可能为TermType.Ignore类型，此时其value并不是RegionEntity对象，因此下面region的值可能为null
+	// acceptableItem可能为TermType.Ignore类型,
+	// 其value并不是RegionEntity对象, 因此下面region可能为nil
 	region := acceptableItem.Value
-	riv.stack = append(riv.stack, acceptableItem)
-	if isFullMatch(entry, region) { // 使用全名匹配的词条数
+	riv.stack = append(riv.stack, acceptableItem) // 更新当前状态, 匹配项压栈
+	if isFullMatch(entry, region) {               // 使用全名匹配的词条数
 		riv.fullMatchCount++
 	}
-	riv.CurrentPos = riv.positioning(region, entry, text, pos) // 当前结束的位置
+	riv.currentPos = riv.positioning(region, entry, text, pos) // 当前结束的位置
 	riv.updateCurrentDivisionState(region, entry)              // 刷新当前已经匹配上的省市区
 
 	return true
@@ -163,7 +168,7 @@ loop:
 
 		// 2. 中间缺一级的情况
 		if mostPriority == -1 || mostPriority > 2 {
-			parent := persister.GetRegion(region.ParentID)
+			parent := riv.Persister.GetRegion(region.ParentID)
 			// 2.1 缺地级市
 			if riv.CurDivision.City == nil && riv.CurDivision.Province != nil &&
 				region.Types == DistrictRegion && riv.CurDivision.Province.ID == parent.ParentID {
@@ -220,7 +225,7 @@ loop:
 				riv.CurDivision.City != nil && riv.CurDivision.Province != nil &&
 				isFullMatch(entry, region) && // 使用的全名匹配
 				riv.CurDivision.City.ID != region.ParentID { // 区县的地级市
-				city := persister.GetRegion(region.ParentID)
+				city := riv.Persister.GetRegion(region.ParentID)
 				if city.ParentID == riv.CurDivision.Province.ID && !riv.hasThreeDivision() {
 					mostPriority = 4
 					acceptableItem = item
@@ -233,8 +238,8 @@ loop:
 		if region.Types == StreetRegion || region.Types == TownRegion ||
 			region.Types == VillageRegion || region.Types == PlatformL4 {
 			if riv.CurDivision.District != nil {
-				parent := persister.GetRegion(region.ParentID) // parent为区县
-				parent = persister.GetRegion(parent.ParentID)  // parent为地级市
+				parent := riv.Persister.GetRegion(region.ParentID) // parent为区县
+				parent = riv.Persister.GetRegion(parent.ParentID)  // parent为地级市
 				if riv.CurDivision.City != nil && riv.CurDivision.City.ID == parent.ID {
 					mostPriority = 5
 					acceptableItem = item
@@ -260,7 +265,7 @@ func (riv *RegionInterpreterVisitor) positioning(
 		acceptedRegion.Types == StreetRegion) &&
 		!isFullMatch(entry, acceptedRegion) && pos+1 <= len(text)-1 {
 		c := string(text[pos+1])
-		_, ok := riv.AmbiguousChars[c]
+		_, ok := riv.ambiguousChars[c]
 		if ok { // 后面跟着特殊字符
 			if acceptedRegion.Children != nil {
 				for _, child := range acceptedRegion.Children {
@@ -327,20 +332,20 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 	case ProvinceLevelCity2:
 		riv.CurDivision.City = region
 		if riv.CurDivision.Province != nil {
-			riv.CurDivision.Province = persister.GetRegion(region.ParentID)
+			riv.CurDivision.Province = riv.Persister.GetRegion(region.ParentID)
 		}
 	case CityLevelDistrict:
 		riv.CurDivision.City = region
 		riv.CurDivision.District = region
 		if riv.CurDivision.Province != nil {
-			riv.CurDivision.Province = persister.GetRegion(region.ParentID)
+			riv.CurDivision.Province = riv.Persister.GetRegion(region.ParentID)
 		}
 	case DistrictRegion:
 		riv.CurDivision.District = region
 		// 成功匹配了区县，则强制更新地级市
-		riv.CurDivision.City = persister.GetRegion(riv.CurDivision.District.ParentID)
+		riv.CurDivision.City = riv.Persister.GetRegion(riv.CurDivision.District.ParentID)
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentID)
+			riv.CurDivision.Province = riv.Persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
 	case StreetRegion:
 	case PlatformL4:
@@ -348,7 +353,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Street = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District.ParentID)
@@ -358,7 +363,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Town = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District.ParentID)
@@ -368,7 +373,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Village = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District.ParentID)
@@ -380,27 +385,23 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 
 func (riv *RegionInterpreterVisitor) updateCityAndProvince(parentId uint) {
 	if riv.CurDivision.City == nil {
-		riv.CurDivision.City = persister.GetRegion(parentId)
+		riv.CurDivision.City = riv.Persister.GetRegion(parentId)
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = persister.GetRegion(riv.CurDivision.City.ParentID)
+			riv.CurDivision.Province = riv.Persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
 	}
 }
 
-func (riv *RegionInterpreterVisitor) StartRound() {
-	riv.CurrentLevel++
+func (riv *RegionInterpreterVisitor) PositionAfterAcceptItem() int {
+	return riv.currentPos
 }
 
-func (riv RegionInterpreterVisitor) PositionAfterAcceptItem() int {
-	return riv.CurrentPos
-}
-
-func (riv RegionInterpreterVisitor) EndVisit(entry *index.TermIndexEntry, pos int) {
+func (riv *RegionInterpreterVisitor) EndVisit(entry *index.TermIndexEntry, pos int) {
 	riv.checkDeepMost()
 
 	indexTerm := riv.stack[len(riv.stack)-1] // 当前访问的索引对象出栈
 	riv.stack = riv.stack[:len(riv.stack)-1]
-	riv.CurrentPos = pos - len(entry.Key) // 恢复当前位置指针
+	riv.currentPos = pos - len(entry.Key) // 恢复当前位置指针
 
 	if isFullMatch(entry, indexTerm.Value) {
 		riv.fullMatchCount++ // 更新全名匹配的数量
@@ -475,16 +476,16 @@ loop:
 	riv.CurDivision.District = nil
 }
 
-func (riv RegionInterpreterVisitor) EndRound() {
+func (riv *RegionInterpreterVisitor) EndRound() {
 	riv.checkDeepMost()
 	riv.CurrentLevel--
 }
 
-func (riv RegionInterpreterVisitor) checkDeepMost() {
+func (riv *RegionInterpreterVisitor) checkDeepMost() {
 	if len(riv.stack) > riv.DeepMostLevel {
 		riv.DeepMostLevel = len(riv.stack)
-		riv.DeepMostPos = riv.CurrentPos
-		riv.DeepMostFullMatchCount = riv.fullMatchCount
+		riv.deepMostPos = riv.currentPos
+		riv.deepMostFullMatchCount = riv.fullMatchCount
 		riv.DeepMostDivision.Province = riv.CurDivision.Province
 		riv.DeepMostDivision.City = riv.CurDivision.City
 		riv.DeepMostDivision.District = riv.CurDivision.District
@@ -494,8 +495,8 @@ func (riv RegionInterpreterVisitor) checkDeepMost() {
 	}
 }
 
-func (riv RegionInterpreterVisitor) HasResult() bool {
-	return riv.DeepMostPos > 0 && riv.DeepMostDivision.District != nil
+func (riv *RegionInterpreterVisitor) HasResult() bool {
+	return riv.deepMostPos > 0 && riv.DeepMostDivision.District != nil
 }
 
 func (riv *RegionInterpreterVisitor) GetDevision() Address {
@@ -507,20 +508,20 @@ func (riv *RegionInterpreterVisitor) MatchCount() int {
 }
 
 func (riv *RegionInterpreterVisitor) FullMatchCount() int {
-	return riv.DeepMostFullMatchCount
+	return riv.deepMostFullMatchCount
 }
 
 func (riv *RegionInterpreterVisitor) EndPosition() int {
-	return riv.DeepMostPos
+	return riv.deepMostPos
 }
 
 func (riv *RegionInterpreterVisitor) Reset() {
 	riv.CurrentLevel = 0
 	riv.DeepMostLevel = 0
-	riv.CurrentPos = -1
-	riv.DeepMostPos = -1
+	riv.currentPos = -1
+	riv.deepMostPos = -1
 	riv.fullMatchCount = 0
-	riv.DeepMostFullMatchCount = 0
+	riv.deepMostFullMatchCount = 0
 	riv.DeepMostDivision.Province = nil
 	riv.DeepMostDivision.City = nil
 	riv.DeepMostDivision.District = nil

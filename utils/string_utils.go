@@ -2,6 +2,16 @@ package utils
 
 import "strings"
 
+func Head(text string, length int) string {
+	if len(text) == 0 || len(text) <= length {
+		return text
+	}
+	if length <= 0 {
+		return ""
+	}
+	return text[:length]
+}
+
 func IsAnsiChars(text string) bool {
 	if len(text) == 0 {
 		return false
@@ -28,36 +38,13 @@ func IsNumericChars(text string) bool {
 	return true
 }
 
-func Head(text string, length int) string {
-	if len(text) == 0 || len(text) <= length {
-		return text
-	}
-	if length <= 0 {
-		return ""
-	}
-	return text[:length]
-}
-
-func Substring(text string, begin, end int) string {
-	if len(text) == 0 {
-		return text
-	}
-	if begin < 0 {
-		begin = 0
-	}
-	if end >= len(text) {
-		end = len(text)
-	}
-	return text[begin:end]
-}
-
 func Remove(text string, chars []byte, exclude string) string {
 	if len(text) == 0 || len(chars) == 0 {
 		return text
 	}
 	charSet := make(map[byte]struct{}, 0)
 	for _, v := range chars {
-		charSet[v] = struct{}{} // TODO cache
+		charSet[v] = struct{}{}
 	}
 	var sb strings.Builder
 	var removed bool
@@ -98,4 +85,45 @@ func RemoveRepeatNum(text string, n int) string {
 	}
 
 	return sb.String()
+}
+
+func Tail(text string, length int) string {
+	if len(text) == 0 {
+		return text
+	}
+	if length <= 0 {
+		return ""
+	}
+	return text[len(text)-length:]
+}
+
+func Take(text string, begin int) string {
+	if len(text) == 0 {
+		return text
+	}
+	if begin <= 0 {
+		begin = 0
+	}
+	if begin > len(text)-1 {
+		return ""
+	}
+
+	return text[begin:]
+}
+
+func Substring(text string, begin, end int) string {
+	if len(text) == 0 {
+		return text
+	}
+	if begin < 0 {
+		begin = 0
+	}
+	if end >= len(text) {
+		end = len(text)
+	}
+	if begin > end {
+		return ""
+	}
+
+	return text[begin : end+1]
 }

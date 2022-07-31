@@ -9,22 +9,24 @@ import (
 
 // TermIndexBuilder 行政区划建立倒排索引
 type TermIndexBuilder struct {
-	indexRoot TermIndexEntry
+	indexRoot *TermIndexEntry
 }
 
-func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []string) TermIndexBuilder {
-	newTib := TermIndexBuilder{}
-	newTib.indexRegions(persister.GetRootRegionChilden())
+func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []string) *TermIndexBuilder {
+	newTib := &TermIndexBuilder{
+		indexRoot: NewTermIndexEntry(),
+	}
+	newTib.indexRegions()
 	newTib.indexIgnoring(ingoringRegionNames)
 	return newTib
 }
 
 // 为行政区划建立倒排索引
-func (tib *TermIndexBuilder) indexRegions(regions *[]*Region) {
-	if len(*regions) == 0 {
+func (tib *TermIndexBuilder) indexRegions(regions []*Region) {
+	if len(regions) == 0 {
 		return
 	}
-	for _, region := range *regions {
+	for _, region := range regions {
 		tii := NewTermIndexItem(convertRegionType(region), region)
 		for _, name := range region.OrderedNameAndAlias() {
 			tib.indexRoot.BuildIndex(name, 0, tii)
@@ -63,9 +65,9 @@ func (tib *TermIndexBuilder) indexRegions(regions *[]*Region) {
 				tib.indexRoot.BuildIndex(shortName+"镇", 0, tii)
 			}
 		}
-		// 递归
-		if region.Children != nil {
-			tib.indexRegions(&region.Children)
+
+		if region.Children != nil { // 递归
+			tib.indexRegions(region.Children)
 		}
 	}
 }
@@ -75,8 +77,8 @@ func (tib *TermIndexBuilder) indexIgnoring(ignoreList []string) {
 	if len(ignoreList) == 0 {
 		return
 	}
-	for _, v := range ignoreList {
-		tib.indexRoot.BuildIndex(v, 0, NewTermIndexItem(IgnoreTerm, nil))
+	for _, str := range ignoreList {
+		tib.indexRoot.BuildIndex(str, 0, NewTermIndexItem(IgnoreTerm, nil))
 	}
 }
 
@@ -85,7 +87,7 @@ func (tib *TermIndexBuilder) DeepMostQuery(text string, visitor TermIndexVisitor
 	if len(text) == 0 {
 		return
 	}
-	var pos int
+	var pos int // 判断是否有中国开头
 	if strings.HasPrefix(text, "中国") || strings.HasPrefix(text, "天朝") {
 		pos += 2
 	}
@@ -98,21 +100,22 @@ func (tib *TermIndexBuilder) DeepPosMostQuery(text string, pos int, visitor Term
 	}
 	// 开始匹配
 	visitor.StartRound()
-	tib.deepFirstQueryRound(text, pos, visitor)
+	tib.deepFirstQueryRound(text, pos, tib.indexRoot.Children, visitor)
 	visitor.EndRound()
 }
 
-func (tib *TermIndexBuilder) deepFirstQueryRound(text string, pos int, visitor TermIndexVisitor) {
-	// 获取索引对象
+// 获取索引对象
+func (tib *TermIndexBuilder) deepFirstQueryRound(
+	text string, pos int, entries map[byte]*TermIndexEntry, visitor TermIndexVisitor) {
 	if pos > len(text)-1 {
 		return
 	}
-	entry, ok := tib.indexRoot.Children[text[pos]]
+	entry, ok := entries[text[pos]]
 	if !ok {
 		return
 	}
-	if pos+1 <= len(text)-1 {
-		tib.deepFirstQueryRound(text, pos+1, visitor)
+	if entry.Children != null && pos+1 <= len(text)-1 {
+		tib.deepFirstQueryRound(text, pos+1, entry.Children, visitor)
 	}
 	if len(entry.Items) > 0 {
 		if visitor.Visit(entry, text, pos) {
@@ -127,6 +130,8 @@ func (tib *TermIndexBuilder) deepFirstQueryRound(text string, pos int, visitor T
 
 func convertRegionType(region *Region) TermEnum {
 	switch region.Types {
+	case CountryRegion:
+		return CountryTerm
 	case ProvinceRegion:
 	case ProvinceLevelCity1:
 		return ProvinceTerm
@@ -148,8 +153,20 @@ func convertRegionType(region *Region) TermEnum {
 		} else {
 			return StreetTerm
 		}
-	default:
-		return UndefinedTerm
 	}
 	return UndefinedTerm
+}
+
+func (tib *TermIndexBuilder) FullMatch(text string, pos int) []*TermIndexItem {
+	if len(text) == 0 || tib.indexRoot.Children == null {
+		return null
+	}
+	entry, ok := tib.indexRoot.Children[text[pos]]
+	if !ok {
+		return null
+	}
+	if pos == len(text)-1 {
+		return entry.Items
+	}
+	return tib.FullMatch(text, pos+1)
 }

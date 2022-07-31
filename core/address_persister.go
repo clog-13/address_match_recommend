@@ -60,9 +60,9 @@ func (ap AddressPersister) loadRegionChildren(parent *Region) {
 	}
 }
 
-func (ap AddressPersister) GetRootRegionChilden() *[]*Region {
+func (ap AddressPersister) GetRootRegionChilden() []*Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}
-	return &ap.RegionTree.Children
+	return ap.RegionTree.Children
 }

@@ -162,7 +162,7 @@ func init() {
 }
 
 type AddressInterpreter struct {
-	indexBuilder index.TermIndexBuilder
+	indexBuilder *index.TermIndexBuilder
 }
 
 func NewAddressInterpreter(persister AddressPersister) *AddressInterpreter {
@@ -211,32 +211,6 @@ func (ai AddressInterpreter) interpret(entity *Address, visitor index.TermIndexV
 			ai.extractRoad(entity)
 		}
 	}
-}
-
-func interprets(addrTextList []string, visitor RegionInterpreterVisitor) []Address {
-	return nil
-	//	if addrTextList == nil {
-	//		return nil
-	//	}
-	//	numSuccess, numFail := 0, 0
-	//	addresses := make([]Address, 0)
-	//	for _, addrText := range addrTextList {
-	//		if len(addrText) == 0 {
-	//			continue
-	//		}
-	//		address := interpretSimgle(addrText, visitor)
-	//		if address.IsNil() || !address.City.IsNil() || !address.District.IsNil() {
-	//			numFail++
-	//			continue
-	//		}
-	//		numSuccess++
-	//		addresses = append(addresses, address)
-	//	}
-	//	return addresses
-	//}
-	//
-	//func interpretSimgle(addressText string, visitor RegionInterpreterVisitor) Address {
-
 }
 
 // 清洗下开头垃圾数据

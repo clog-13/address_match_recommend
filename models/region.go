@@ -9,7 +9,7 @@ import (
 type Region struct {
 	ID         uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 	DivisionID uint
-	
+
 	ParentID uint       `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
 	Name     string     `gorm:"type:string;comment:区域名称" json:"region_name"`
 	Alias    string     `gorm:"type:string;comment:区域别名" json:"region_alias"`
@@ -20,7 +20,7 @@ type Region struct {
 	//_varchar OrderedNames pq.StringArray `gorm:"type:varchar(255)[]" json:"region_ordered_names"`
 }
 
-func (r Region) IsTown() bool {
+func (r *Region) IsTown() bool {
 	switch r.Types {
 	case CountryRegion:
 		return true
@@ -35,37 +35,24 @@ func (r Region) IsTown() bool {
 }
 
 // OrderedNameAndAlias 获取所有名称和别名列表，按字符长度倒排序。
-func (r Region) OrderedNameAndAlias() []string {
-	if r.OrderedNames == nil {
+func (r *Region) OrderedNameAndAlias() []string {
+	if r.OrderedNames != null {
 		return r.OrderedNames
 	}
-	r.buildOrderedNameAndAlias()
-	return r.OrderedNames
-}
 
-func (r Region) buildOrderedNameAndAlias() {
-	if r.OrderedNames != nil {
-		return
-	}
+	r.OrderedNames = make([]string, 0)
+	r.OrderedNames = append(r.OrderedNames, r.Name)
 	tokens := make([]string, 0)
 	if r.Alias != "" && len(strings.TrimSpace(r.Alias)) > 0 {
 		tokens = strings.Split(strings.TrimSpace(r.Alias), ";")
 	}
-	if tokens == nil || len(tokens) <= 0 {
-		r.OrderedNames = make([]string, 1)
-	} else {
-		r.OrderedNames = make([]string, len(tokens)+1)
-	}
-	r.OrderedNames = append(r.OrderedNames, r.Name)
-	if tokens != nil {
-		for _, v := range tokens {
-			if v == "" || len(strings.TrimSpace(v)) <= 0 {
-				continue
-			}
+	for _, v := range tokens {
+		if len(v) > 0 && len(strings.TrimSpace(v)) > 0 {
 			r.OrderedNames = append(r.OrderedNames, strings.TrimSpace(v))
 		}
 	}
 
+	// 按长度倒序
 	exchanged := true
 	endIndex := len(r.OrderedNames) - 1
 	for exchanged && endIndex > 0 {
@@ -80,6 +67,8 @@ func (r Region) buildOrderedNameAndAlias() {
 		}
 		endIndex--
 	}
+
+	return r.OrderedNames
 }
 
 func (r *Region) Equal(t *Region) bool {

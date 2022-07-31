@@ -4,6 +4,7 @@ type TermEnum byte
 
 const (
 	UndefinedTerm = '0'
+	CountryTerm   = 'C'
 	ProvinceTerm  = '1'
 	CityTerm      = '2'
 	DistrictTerm  = '3'
