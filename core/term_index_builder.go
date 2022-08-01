@@ -1,7 +1,6 @@
-package index
+package core
 
 import (
-	"github.com/xiiv13/address_match_recommend/core"
 	. "github.com/xiiv13/address_match_recommend/models"
 	"github.com/xiiv13/address_match_recommend/utils"
 	"strings"
@@ -12,11 +11,11 @@ type TermIndexBuilder struct {
 	indexRoot *TermIndexEntry
 }
 
-func NewTermIndexBuilder(persister core.AddressPersister, ingoringRegionNames []string) *TermIndexBuilder {
+func NewTermIndexBuilder(persister AddressPersister, ingoringRegionNames []string) *TermIndexBuilder {
 	newTib := &TermIndexBuilder{
 		indexRoot: NewTermIndexEntry(),
 	}
-	newTib.indexRegions()
+	newTib.indexRegions(persister.RootRegion().Children)
 	newTib.indexIgnoring(ingoringRegionNames)
 	return newTib
 }
@@ -114,7 +113,7 @@ func (tib *TermIndexBuilder) deepFirstQueryRound(
 	if !ok {
 		return
 	}
-	if entry.Children != null && pos+1 <= len(text)-1 {
+	if len(entry.Children) > 0 && pos+1 <= len(text)-1 {
 		tib.deepFirstQueryRound(text, pos+1, entry.Children, visitor)
 	}
 	if len(entry.Items) > 0 {
@@ -158,12 +157,12 @@ func convertRegionType(region *Region) TermEnum {
 }
 
 func (tib *TermIndexBuilder) FullMatch(text string, pos int) []*TermIndexItem {
-	if len(text) == 0 || tib.indexRoot.Children == null {
-		return null
+	if len(text) == 0 || len(tib.indexRoot.Children) == 0 {
+		return nil
 	}
 	entry, ok := tib.indexRoot.Children[text[pos]]
 	if !ok {
-		return null
+		return nil
 	}
 	if pos == len(text)-1 {
 		return entry.Items

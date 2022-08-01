@@ -1,4 +1,4 @@
-package index
+package core
 
 import (
 	. "github.com/xiiv13/address_match_recommend/models"

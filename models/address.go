@@ -23,7 +23,7 @@ type Address struct {
 }
 
 // LeastRegion 获取最小一级有效行政区域对象
-func (d Address) LeastRegion() *Region {
+func (d *Address) LeastRegion() *Region {
 	if d.Village != nil {
 		return d.Village
 	}
@@ -42,7 +42,7 @@ func (d Address) LeastRegion() *Region {
 	return d.Province
 }
 
-func (d Address) GetTown() *Region {
+func (d *Address) GetTown() *Region {
 	if d.Town != nil {
 		return d.Town
 	}
@@ -52,7 +52,7 @@ func (d Address) GetTown() *Region {
 	return nil
 }
 
-func (d Address) SetTown(value *Region) {
+func (d *Address) SetTown(value *Region) {
 	if value == nil {
 		d.Town = nil
 		return

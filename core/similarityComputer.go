@@ -22,9 +22,8 @@ var (
 	interpreter AddressInterpreter
 	segmenter   = segment.NewSegment("simple")
 
-	CacheVectorsInMemory = false
-	VectorsCache         = make(map[string][]Document)
-	IdfCache             = make(map[string]map[string]float64)
+	VectorsCache = make(map[string][]Document)
+	IdfCache     = make(map[string]map[string]float64)
 )
 
 /**
@@ -99,10 +98,13 @@ func analyse(addr *Address) Document {
 	if len(addr.AddressText) > 0 {
 		tokens = segmenter.Segment(addr.AddressText)
 	}
-	terms := make([]*Term, 0) // 预分配空间 TODO
 
+	// TODO
+
+	terms := make([]*Term, 0)
 	// 生成term
 	if addr.Town != nil {
+
 		doc.Town = NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
@@ -121,6 +123,10 @@ func analyse(addr *Address) Document {
 		roadNum.Ref = doc.Road
 		terms = append(terms, doc.RoadNum)
 	}
+
+	// TODO
+
+	//translateBuilding()
 
 	// 地址文本分词后的token
 	for _, text := range tokens {
@@ -380,73 +386,68 @@ func loadDocunentsFromCache(address *Address) []Document {
 		return nil
 	}
 	docs := make([]Document, 0)
-	if !CacheVectorsInMemory { // 从文件读取
-		docs = loadDocumentsFromDatabase(cacheKey)
-		return docs
-	} else { // 从内存读取，如果未缓存到内存，则从文件加载到内存中
-		docs = VectorsCache[cacheKey]
+	// 从内存读取，如果未缓存到内存，则从文件加载到内存中
+	docs = VectorsCache[cacheKey]
+	if docs == nil {
+		docs = loadDocumentsFromDatabase(address)
 		if docs == nil {
+			docs = make([]Document, 0)
+			VectorsCache[cacheKey] = docs
+		}
 
+		// 为所有词条计算IDF并缓存
+		idfs := IdfCache[cacheKey]
+		if idfs == nil {
 			// TODO
-
-			docs = VectorsCache[cacheKey]
-			if docs == nil {
-				docs = loadDocumentsFromDatabase(cacheKey)
-				if docs == nil {
-					docs = make([]Document, 0)
-					VectorsCache[cacheKey] = docs
-				}
-			}
-
-			// 为所有词条计算IDF并缓存
-			idfs := IdfCache[cacheKey]
+			idfs = IdfCache[cacheKey]
 			if idfs == nil {
-				// TODO
-				idfs = IdfCache[cacheKey]
-				if idfs == nil {
-					termReferences := statInverseDocRefers(docs)
-					idfs = make(map[string]float64, len(termReferences))
-					for k, v := range termReferences {
-						idf := 0.0
-						if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
-							idf = 2.0
-						} else {
-							idf = math.Log(float64(len(docs) / (v + 1)))
-						}
-						if idf < 0.0 {
-							idf = 0.0
-						}
-						idfs[k] = idf
+				termReferences := statInverseDocRefers(docs)
+				idfs = make(map[string]float64, len(termReferences))
+				for k, v := range termReferences {
+					idf := 0.0
+					if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
+						idf = 2.0
+					} else {
+						idf = math.Log(float64(len(docs) / (v + 1)))
 					}
-					IdfCache[cacheKey] = idfs
+					if idf < 0.0 {
+						idf = 0.0
+					}
+					idfs[k] = idf
 				}
+				IdfCache[cacheKey] = idfs
 			}
+		}
 
-			for _, doc := range docs {
-				if doc.Town != nil {
-					doc.Town.Idf = idfs[generateIDFCacheEntryKey(doc.Town)]
-				}
-				if doc.Village != nil {
-					doc.Village.Idf = idfs[generateIDFCacheEntryKey(doc.Village)]
-				}
-				if doc.Road != nil {
-					doc.Road.Idf = idfs[generateIDFCacheEntryKey(doc.Road)]
-				}
-				if doc.RoadNum != nil {
-					doc.RoadNum.Idf = idfs[generateIDFCacheEntryKey(doc.RoadNum)]
-				}
-				for _, term := range doc.Terms {
-					term.Idf = idfs[generateIDFCacheEntryKey(term)]
-				}
+		for _, doc := range docs {
+			if doc.Town != nil {
+				doc.Town.Idf = idfs[generateIDFCacheEntryKey(doc.Town)]
+			}
+			if doc.Village != nil {
+				doc.Village.Idf = idfs[generateIDFCacheEntryKey(doc.Village)]
+			}
+			if doc.Road != nil {
+				doc.Road.Idf = idfs[generateIDFCacheEntryKey(doc.Road)]
+			}
+			if doc.RoadNum != nil {
+				doc.RoadNum.Idf = idfs[generateIDFCacheEntryKey(doc.RoadNum)]
+			}
+			for _, term := range doc.Terms {
+				term.Idf = idfs[generateIDFCacheEntryKey(term)]
 			}
 		}
 	}
+
 	return docs
 }
 
-func loadDocumentsFromDatabase(key string) []Document {
-	var docs []Document
-	DB.Find(&docs)
+func loadDocumentsFromDatabase(addr *Address) []Document {
+	//addresses = persist.loadAddresses(province.getId(), city.getId(), 0);
+	addrs:=
+	docs := make([]Document, 0)
+	for _, v := range addrs {
+		docs = append(docs, analyse(&v))
+	}
 	return docs
 }
 
@@ -536,7 +537,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		}
 		dtfidf *= dboost * coord * density
 
-		if explain && topN > 1 && dterm != nil {
+		if explain && topN > 1 && dterm != nil { // 计算相似度
 			mt := new(MatchedTerm)
 			mt.Boost = dboost
 			mt.TfIdf = dtfidf

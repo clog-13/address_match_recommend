@@ -34,11 +34,13 @@ func (r *Region) IsTown() bool {
 	return false
 }
 
+// TODO
+
 // OrderedNameAndAlias 获取所有名称和别名列表，按字符长度倒排序。
 func (r *Region) OrderedNameAndAlias() []string {
-	if r.OrderedNames != null {
-		return r.OrderedNames
-	}
+	//if r.OrderedNames != null {
+	//	return r.OrderedNames
+	//}
 
 	r.OrderedNames = make([]string, 0)
 	r.OrderedNames = append(r.OrderedNames, r.Name)

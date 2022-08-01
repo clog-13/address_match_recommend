@@ -1,7 +1,6 @@
 package core
 
 import (
-	"github.com/xiiv13/address_match_recommend/index"
 	. "github.com/xiiv13/address_match_recommend/models"
 	"github.com/xiiv13/address_match_recommend/utils"
 	"regexp"
@@ -46,7 +45,7 @@ var (
 	bracketPattern = regexp.MustCompile(`([\\(（\\{\\<〈\\[【「][^\\)）\\}\\>〉\\]】」]*[\\)）\\}\\>〉\\]】」])`)
 
 	// 道路信息
-	reROAD = regexp.MustCompile(`^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?`)
+	reROAD = regexp.MustCompile("^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?")
 
 	// 道路中未匹配到的building信息
 	reRoadBuilding = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
@@ -162,23 +161,28 @@ func init() {
 }
 
 type AddressInterpreter struct {
-	indexBuilder *index.TermIndexBuilder
+	indexBuilder *TermIndexBuilder
 }
+
+// TODO
 
 func NewAddressInterpreter(persister AddressPersister) *AddressInterpreter {
 	return &AddressInterpreter{
-		indexBuilder: index.NewTermIndexBuilder(persister, ignoringRegionNames),
+		//indexBuilder: NewTermIndexBuilder(, ignoringRegionNames),
 	}
 }
 
+// TODO
+
 // Interpret 将地址进行标准化处理, 解析成 Address
 func (ai AddressInterpreter) Interpret(entity *Address) {
-
-	visitor := NewRegionInterpreterVisitor(persister)
-	ai.interpret(entity, visitor)
+	// visitor = new RegionInterpreterVisitor(persister);
+	// persister = DefaultAddressPersister(DefaultRegionCache(dataClassPath)),
+	//visitor := NewRegionInterpreterVisitor(persister, false)
+	//ai.interpret(entity, visitor)
 }
 
-func (ai AddressInterpreter) interpret(entity *Address, visitor index.TermIndexVisitor) {
+func (ai AddressInterpreter) interpret(entity *Address, visitor TermIndexVisitor) {
 	// 清洗下开头垃圾数据, 针对用户数据
 	ai.prepare(entity)
 	// 提取建筑物号
@@ -369,7 +373,7 @@ func (ai AddressInterpreter) extractBrackets(entity *Address) string {
 }
 
 // 提取行政规划标准地址
-func (ai AddressInterpreter) extractRegion(entity *Address, visitor index.TermIndexVisitor) {
+func (ai AddressInterpreter) extractRegion(entity *Address, visitor TermIndexVisitor) {
 	if len(entity.AddressText) == 0 {
 		return
 	}
@@ -387,7 +391,7 @@ func (ai AddressInterpreter) extractRegion(entity *Address, visitor index.TermIn
 }
 
 // 规整省市区街道等匹配的结果
-func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor index.TermIndexVisitor) {
+func (ai AddressInterpreter) removeRedundancy(entity *Address, visitor TermIndexVisitor) {
 	if len(entity.AddressText) == 0 || entity.Province == nil || entity.City == nil {
 		return
 	}
