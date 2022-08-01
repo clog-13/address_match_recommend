@@ -8,30 +8,31 @@ import (
 type TermIndexEntry struct {
 	Key      string                   // 条目的key
 	Items    []*TermIndexItem         // 每个条目下的所有索引对象
-	Children map[byte]*TermIndexEntry // 子条目
+	Children map[rune]*TermIndexEntry // 子条目
 }
 
-func NewTermIndexEntry() *TermIndexEntry {
-	return new(TermIndexEntry)
+func NewTermIndexEntry(text string) *TermIndexEntry {
+	return &TermIndexEntry{
+		Key:      text,
+		Items:    make([]*TermIndexItem, 0),
+		Children: make(map[rune]*TermIndexEntry),
+	}
 }
 
 // BuildIndex 初始化倒排索引
-func (tie TermIndexEntry) BuildIndex(text string, pos int, item *TermIndexItem) {
+func (tie *TermIndexEntry) BuildIndex(text []rune, pos int, item *TermIndexItem) {
 	if len(text) == 0 || pos < 0 || pos >= len(text) {
 		return
 	}
 
 	c := text[pos]
-	entry, ok := tie.Children[c]
+	_, ok := tie.Children[c]
 	if !ok {
-		entry = NewTermIndexEntry()
-		entry.Key = utils.Head(text, pos+1)
-
-		tie.Children[c] = entry
+		tie.Children[c] = NewTermIndexEntry(utils.Head(text, pos+1))
 	}
 	if pos == len(text)-1 {
-		entry.Items = append(entry.Items, item)
+		tie.Children[c].Items = append(tie.Children[c].Items, item)
 		return
 	}
-	entry.BuildIndex(text, pos+1, item)
+	tie.Children[c].BuildIndex(text, pos+1, item)
 }

@@ -3,6 +3,10 @@ package segment
 type SimpleSegmenter struct {
 }
 
+func NewSimpleSegmenter() *SimpleSegmenter {
+	return new(SimpleSegmenter)
+}
+
 // Segment 简单分词器, 直接按单个字符切分, 连续出现的数字、英文字母会作为一个词条
 func (s SimpleSegmenter) Segment(text string) []string {
 	if len(text) == 0 {

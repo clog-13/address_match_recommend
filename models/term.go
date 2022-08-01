@@ -5,14 +5,14 @@ type Term struct {
 	Id uint `gorm:"primaryKey;"`
 
 	TermId uint
-	Text   string   `gorm:"type:text;comment:词条字段" json:"term_text"`
-	Types  TermEnum `gorm:"type:SMALLINT;comment:词条类型" json:"term_types"`
-	Idf    float64  `gorm:"type:float;comment:IDF" json:"term_idf"`
+	Text   string  `gorm:"type:text;comment:词条字段" json:"term_text"`
+	Types  int     `gorm:"type:SMALLINT;comment:词条类型" json:"term_types"`
+	Idf    float64 `gorm:"type:float;comment:IDF" json:"term_idf"`
 
 	Ref *Term `gorm:"-"`
 }
 
-func NewTerm(types TermEnum, text string) *Term {
+func NewTerm(types int, text string) *Term {
 	return &Term{
 		Types: types,
 		Text:  text,

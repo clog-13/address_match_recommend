@@ -1,10 +1,8 @@
 package models
 
-type TermEnum byte
-
 const (
-	UndefinedTerm = '0'
-	CountryTerm   = 'C'
+	UndefinedTerm = int('0')
+	CountryTerm   = int('C')
 	ProvinceTerm  = '1'
 	CityTerm      = '2'
 	DistrictTerm  = '3'

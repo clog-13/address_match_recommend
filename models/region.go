@@ -10,10 +10,10 @@ type Region struct {
 	ID         uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 	DivisionID uint
 
-	ParentID uint       `gorm:"type:uint;comment:完整地址" json:"region_parent_id"`
-	Name     string     `gorm:"type:string;comment:区域名称" json:"region_name"`
-	Alias    string     `gorm:"type:string;comment:区域别名" json:"region_alias"`
-	Types    RegionEnum `gorm:"type:SMALLINT;comment:区域类型" json:"region_types"`
+	ParentID uint   `gorm:"type:uint;" json:"region_parent_id"`
+	Name     string `gorm:"type:string;" json:"region_name"`
+	Alias    string `gorm:"column:type;type:string;" json:"region_alias"`
+	Types    int    `gorm:"type:SMALLINT;" json:"region_types"`
 
 	Children     []*Region      `gorm:"-"`
 	OrderedNames pq.StringArray `gorm:"-"`
@@ -79,5 +79,5 @@ func (r *Region) Equal(t *Region) bool {
 }
 
 func (r *Region) TableName() string {
-	return "region"
+	return "bas_region"
 }

@@ -5,15 +5,18 @@ import (
 	"strings"
 )
 
+var (
+	ambiguousChars = map[string]struct{}{
+		"市": {}, "县": {}, "区": {}, "镇": {}, "乡": {},
+	}
+)
+
 // RegionInterpreterVisitor 基于倒排索引搜索匹配 省市区行政区划的访问者
 type RegionInterpreterVisitor struct {
-	Persister AddressPersister
-
-	ambiguousChars map[string]struct{}
-	strict         bool
+	Persister *AddressPersister
 
 	CurrentLevel, DeepMostLevel            int
-	currentPos, deepMostPos                int
+	CurrentPos, DeepMostPos                int
 	fullMatchCount, deepMostFullMatchCount int
 
 	DeepMostDivision Address
@@ -22,18 +25,16 @@ type RegionInterpreterVisitor struct {
 	stack []*TermIndexItem
 }
 
-func NewRegionInterpreterVisitor(ap AddressPersister, strict bool) *RegionInterpreterVisitor {
+func NewRegionInterpreterVisitor(ap *AddressPersister) *RegionInterpreterVisitor {
 	newRiv := &RegionInterpreterVisitor{
-		Persister:   ap,
-		currentPos:  -1,
-		deepMostPos: -1,
-		strict:      strict,
+		Persister:        ap,
+		CurrentPos:       -1,
+		DeepMostPos:      -1,
+		DeepMostDivision: Address{},
+		CurDivision:      Address{},
+
+		stack: make([]*TermIndexItem, 0),
 	}
-	newRiv.ambiguousChars["市"] = struct{}{}
-	newRiv.ambiguousChars["县"] = struct{}{}
-	newRiv.ambiguousChars["区"] = struct{}{}
-	newRiv.ambiguousChars["镇"] = struct{}{}
-	newRiv.ambiguousChars["乡"] = struct{}{}
 
 	return newRiv
 }
@@ -42,7 +43,7 @@ func (riv *RegionInterpreterVisitor) StartRound() {
 	riv.CurrentLevel++
 }
 
-func (riv *RegionInterpreterVisitor) Visit(entry *TermIndexEntry, text string, pos int) bool {
+func (riv *RegionInterpreterVisitor) Visit(entry *TermIndexEntry, text []rune, pos int) bool {
 	// 找到最匹配的 被索引对象
 	acceptableItem := riv.findAcceptableItem(entry, text, pos)
 	if acceptableItem == nil { // 没有匹配对象，匹配不成功，返回
@@ -56,20 +57,20 @@ func (riv *RegionInterpreterVisitor) Visit(entry *TermIndexEntry, text string, p
 	if isFullMatch(entry, region) {               // 使用全名匹配的词条数
 		riv.fullMatchCount++
 	}
-	riv.currentPos = riv.positioning(region, entry, text, pos) // 当前结束的位置
+	riv.CurrentPos = riv.positioning(region, entry, text, pos) // 当前结束的位置
 	riv.updateCurrentDivisionState(region, entry)              // 刷新当前已经匹配上的省市区
 
 	return true
 }
 
 func (riv *RegionInterpreterVisitor) findAcceptableItem(
-	entry *TermIndexEntry, text string, pos int) *TermIndexItem {
+	entry *TermIndexEntry, text []rune, pos int) *TermIndexItem {
 	mostPriority := -1
 	var acceptableItem *TermIndexItem
 
 	for _, item := range entry.Items { // 每个 被索引对象循环，找出最匹配的
 		// 仅处理省市区类型的 被索引对象，忽略其它类型的
-		if !isAcceptableItemType(item.Types) {
+		if !IsAcceptableItemType(item.Types) {
 			continue
 		}
 
@@ -101,8 +102,8 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 					}
 				}
 			}
-			if mostPriority == -1 || int(region.Types) < mostPriority {
-				mostPriority = int(region.Types)
+			if mostPriority == -1 || region.Types < mostPriority {
+				mostPriority = region.Types
 				acceptableItem = item
 			}
 			continue
@@ -267,19 +268,10 @@ func isFullMatch(entry *TermIndexEntry, region *Region) bool {
 	return false
 }
 
-// 索引对象是否是可接受的省市区等类型
-func isAcceptableItemType(types TermEnum) bool {
-	switch types {
-	case ProvinceTerm:
-	case CityTerm:
-	case DistrictTerm:
-	case StreetTerm:
-	case TownTerm:
-	case VillageTerm:
-	case IgnoreTerm:
-		return true
-	}
-	return false
+// IsAcceptableItemType 索引对象是否是可接受的省市区等类型
+func IsAcceptableItemType(t int) bool {
+	return t == ProvinceTerm || t == CityTerm || t == DistrictTerm || t == StreetTerm || t == TownTerm ||
+		t == VillageTerm || t == IgnoreTerm
 }
 
 // 当前是否已经完全匹配了省市区
@@ -291,7 +283,7 @@ func (riv *RegionInterpreterVisitor) hasThreeDivision() bool {
 }
 
 func (riv *RegionInterpreterVisitor) positioning(
-	acceptedRegion *Region, entry *TermIndexEntry, text string, pos int) int {
+	acceptedRegion *Region, entry *TermIndexEntry, text []rune, pos int) int {
 	//需要调整指针的情况
 	//1. 山东泰安肥城市桃园镇桃园镇山东省泰安市肥城县桃园镇东伏村
 	//   错误匹配方式：提取省市区时，将【肥城县】中的字符【肥城】匹配成【肥城市】，剩下一个【县】
@@ -299,7 +291,7 @@ func (riv *RegionInterpreterVisitor) positioning(
 		acceptedRegion.Types == StreetRegion) &&
 		!isFullMatch(entry, acceptedRegion) && pos+1 <= len(text)-1 {
 		c := string(text[pos+1])
-		_, ok := riv.ambiguousChars[c]
+		_, ok := ambiguousChars[c]
 		if ok { // 后面跟着特殊字符
 			if acceptedRegion.Children != nil {
 				for _, child := range acceptedRegion.Children {
@@ -328,7 +320,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 	}
 
 	// 非严格模式 || 只有一个父项
-	needUpdateCityAndProvince := !riv.strict || len(entry.Items) == 1
+	needUpdateCityAndProvince := len(entry.Items) == 1
 	switch region.Types {
 	case ProvinceRegion:
 	case ProvinceLevelCity1:
@@ -401,7 +393,7 @@ func (riv *RegionInterpreterVisitor) updateCityAndProvince(distinct *Region) {
 
 // PositionAfterAcceptItem 接受某个索引项之后当前匹配的指针位置
 func (riv *RegionInterpreterVisitor) PositionAfterAcceptItem() int {
-	return riv.currentPos
+	return riv.CurrentPos
 }
 
 // EndVisit 结束索引访问
@@ -410,7 +402,7 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 
 	indexTerm := riv.stack[len(riv.stack)-1] // 当前访问的索引对象出栈
 	riv.stack = riv.stack[:len(riv.stack)-1]
-	riv.currentPos = pos - len(entry.Key) // 恢复当前位置指针
+	riv.CurrentPos = pos - len(entry.Key) // 恢复当前位置指针
 
 	if isFullMatch(entry, indexTerm.Value) {
 		riv.fullMatchCount++ // 更新全名匹配的数量
@@ -442,9 +434,9 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 			least = r
 			continue
 		}
-		//if r.Types > least.Types { TODO
-		//	least = r
-		//}
+		if r.Types > least.Types {
+			least = r
+		}
 	}
 
 	if street == nil { // 剩余匹配项中没有街道了
@@ -493,7 +485,7 @@ func (riv *RegionInterpreterVisitor) EndRound() {
 func (riv *RegionInterpreterVisitor) checkDeepMost() {
 	if len(riv.stack) > riv.DeepMostLevel {
 		riv.DeepMostLevel = len(riv.stack)
-		riv.deepMostPos = riv.currentPos
+		riv.DeepMostPos = riv.CurrentPos
 		riv.deepMostFullMatchCount = riv.fullMatchCount
 		riv.DeepMostDivision.Province = riv.CurDivision.Province
 		riv.DeepMostDivision.City = riv.CurDivision.City
@@ -506,7 +498,7 @@ func (riv *RegionInterpreterVisitor) checkDeepMost() {
 
 // HasResult 是否匹配上了结果
 func (riv *RegionInterpreterVisitor) HasResult() bool {
-	return riv.deepMostPos > 0 && riv.DeepMostDivision.District != nil
+	return riv.DeepMostPos > 0 && riv.DeepMostDivision.District != nil
 }
 
 // GetDevision 获取访问后的对象
@@ -524,15 +516,15 @@ func (riv *RegionInterpreterVisitor) FullMatchCount() int {
 
 // EndPosition 获取最终匹配结果的终止位置
 func (riv *RegionInterpreterVisitor) EndPosition() int {
-	return riv.deepMostPos
+	return riv.DeepMostPos
 }
 
 // Reset 状态复位
 func (riv *RegionInterpreterVisitor) Reset() {
 	riv.CurrentLevel = 0
 	riv.DeepMostLevel = 0
-	riv.currentPos = -1
-	riv.deepMostPos = -1
+	riv.CurrentPos = -1
+	riv.DeepMostPos = -1
 	riv.fullMatchCount = 0
 	riv.deepMostFullMatchCount = 0
 	riv.DeepMostDivision.Province = nil

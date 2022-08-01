@@ -8,22 +8,18 @@ type GseSegment struct {
 	seg gse.Segmenter
 }
 
-func NewGseSegment() *GseSegment {
-	g := new(GseSegment)
-	g.seg.LoadDict() // 加载默认词典
+func NewGseSegment() gse.Segmenter {
+	//g := new(GseSegment)
+	g, err := gse.New("zh_s,../resource/dic/region.dic,../resource/dic/community.dic") // 加载默认词典
 
 	// 载入自定义词典
-	err := g.seg.LoadDict("../resource/dic/region.dic")
-	err = g.seg.LoadDict("../resource/dic/comminity.dic")
-	err = g.seg.LoadStop("../resource/dic/stop.dic")
+	//err := g.seg.LoadDict("../resource/dic/region.dic")
+	//err = g.seg.LoadDict("../resource/dic/community.dic")
+
+	err = g.LoadStop("../resource/dic/stop.dic")
 	if err != nil {
 		panic(err)
 	}
 
 	return g
-}
-
-// Segment 简单分词器, 直接按单个字符切分, 连续出现的数字、英文字母会作为一个词条
-func (g GseSegment) Segment(text string) []string {
-	return g.seg.Stop(g.seg.Cut(text))
 }

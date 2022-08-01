@@ -1,7 +1,5 @@
 package models
 
-type RegionEnum int
-
 const (
 	CountryRegion      = 10
 	ProvinceRegion     = 100
