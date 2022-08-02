@@ -20,6 +20,9 @@ func main() {
 	defer file.Close()
 
 	addrs := make([]models.Address, 0)
+	persister := models.NewAddressPersister()
+	interpreter := core.NewAddressInterpreter(persister)
+
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
@@ -33,8 +36,6 @@ func main() {
 			}
 		}
 
-		persister := models.NewAddressPersister()
-		interpreter := core.NewAddressInterpreter(persister)
 		importAddr := models.Address{}
 		importAddr.AddressText = strings.TrimSpace(line)
 		interpreter.Interpret(&importAddr)

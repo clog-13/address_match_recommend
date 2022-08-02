@@ -104,6 +104,13 @@ func (ap *AddressPersister) LoadAddrsPC(provinceId, cityId uint) []Address {
 	DB.Where("province_id = ? AND city_id = ?", provinceId, cityId).Find(&addrs)
 	return addrs
 }
+func (ap *AddressPersister) LoadAddr(id uint) Address {
+	// select `id`,`province`,`city`,`district`,street,town,village,`text`,`road`,`road_num`,`building_num`,`hash`
+	// from `addr_address` where province=#{provinceId} and city=#{cityId} <if test="countyId&gt;0">and district=#{countyId}
+	var addrs Address
+	DB.Where("id = ?", id).Find(&addrs)
+	return addrs
+}
 
 func (ap *AddressPersister) LoadAddrsPCD(provinceId, cityId, countryId uint) []Address {
 	// select `id`,`province`,`city`,`district`,street,town,village,`text`,`road`,`road_num`,`building_num`,`hash`

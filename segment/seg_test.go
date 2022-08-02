@@ -16,6 +16,10 @@ var (
 		"河南省南阳市邓州市花洲街道新华东路刘庄村兴德旅社",
 		"河北省唐山市路北区唐山高新技术产业开发区龙泽路于龙福南道交叉口南行50米维也纳音乐城",
 	}
+	sp = []string{
+		"()四{}川{aa}(bb)成（）都（cc）武[]侯[dd]区【】武【ee】侯<>大<ff>道〈〉铁〈gg〉佛「」段「hh」千盛百货对面200米金履三路288号绿地圣路易名邸[]",
+		"四川成都(武[]侯区武侯大道铁佛{aa}段千)盛百货对面200米金履三【bb】路288号绿地圣路易名邸",
+	}
 )
 
 func TestSimpleSegmenter(t *testing.T) {
@@ -28,6 +32,9 @@ func TestSimpleSegmenter(t *testing.T) {
 func TestGseSegment(t *testing.T) {
 	g := NewGseSegment()
 	for _, v := range addrs {
+		fmt.Println(g.Stop(g.Cut(v)))
+	}
+	for _, v := range sp {
 		fmt.Println(g.Stop(g.Cut(v)))
 	}
 }

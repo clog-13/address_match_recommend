@@ -32,16 +32,16 @@ var (
 	reBuildingNum2 = regexp.MustCompile(`[A-Za-z\d]+([\\#\\-一－/\\\\]+[A-Za-z\d]+)+`)
 
 	// 匹配building的模式：10组21号，农村地址
-	reBuildingNum3 = regexp.MustCompile(`[0-9]+(组|通道)[A-Z0-9\\-一]+号?`)
+	reBuildingNum3 = regexp.MustCompile(`\d+(组|通道)[A-Z\d\\-一]+号?`)
 
 	// 简单括号匹配
-	bracketPattern = regexp.MustCompile(`([\\(（\\{\\<〈\\[【「][^\\)）\\}\\>〉\\]】」]*[\\)）\\}\\>〉\\]】」])`)
+	bracketPattern = regexp.MustCompile(`(?P<bracket>([(（{<〈\[【「][^)）}>〉\]】」]*[)）}>〉\]】」]))`)
 
 	// 道路信息
-	reROAD = regexp.MustCompile("^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|\\#院|\\#))?")
+	reROAD = regexp.MustCompile("^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|#院|#))?")
 
 	// 道路中未匹配到的building信息
-	reRoadBuilding = regexp.MustCompile(`[0-9A-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
+	reRoadBuilding = regexp.MustCompile(`[\dA-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
 
 	// 村信息
 	//P_TOWN1 = regexp.MustCompile(`^((?P<z>[\u4e00-\u9fa5]{2}(镇|乡))(?P<c>[\u4e00-\u9fa5]{1,3}村)?)`)
@@ -221,6 +221,7 @@ func (ai *AddressInterpreter) extractBuildingNum(entity *Address) {
 	if len(entity.AddressText) == 0 {
 		return
 	}
+	//rt := []rune(entity.AddressText)
 	found := false // 是否找到的标志
 	matches := reBuildingNum0.FindAllStringSubmatch(entity.AddressText, -1)
 	matchesIdx := reBuildingNum0.FindAllStringSubmatchIndex(entity.AddressText, -1)
@@ -242,14 +243,15 @@ func (ai *AddressInterpreter) extractBuildingNum(entity *Address) {
 			if strings.HasPrefix(build, "路") || strings.HasPrefix(build, "街") ||
 				strings.HasPrefix(build, "巷") {
 				if strings.Contains(build, "号楼") {
-					pos += strings.Index(build, "路") + 1
+					pos += strings.Index(build, "路") + len("路")
 				} else {
-					pos += strings.Index(build, "号") + 1
+					pos += strings.Index(build, "号") + len("号")
 				}
 				build = entity.AddressText[pos:matchesIdx[i][1]]
 			}
 			entity.BuildingNum = build
 			entity.AddressText = entity.AddressText[:pos] + entity.AddressText[matchesIdx[i][1]:]
+			//entity.AddressText = utils.RemovePos(rt, pos, matchesIdx[i][1])
 			found = true
 			break
 		}
@@ -275,11 +277,13 @@ func (ai *AddressInterpreter) extractBuildingNum(entity *Address) {
 				pos := matchesIdx[i][0]
 				if strings.HasPrefix(build, "路") || strings.HasPrefix(build, "街") ||
 					strings.HasPrefix(build, "巷") {
-					pos += strings.Index(build, "号") + 1
+					pos += strings.Index(build, "号") + len("号")
 					build = entity.AddressText[pos:matchesIdx[i][1]]
+					//build = string(rt[pos:matchesIdx[i][1]])
 				}
 				entity.BuildingNum = build
 				entity.AddressText = entity.AddressText[:pos] + entity.AddressText[matchesIdx[i][1]:]
+				//entity.AddressText = utils.RemovePos(rt, pos, matchesIdx[i][1])
 				found = true
 				break
 			}
@@ -292,6 +296,7 @@ func (ai *AddressInterpreter) extractBuildingNum(entity *Address) {
 			entity.BuildingNum = match
 			pos := reBuildingNum2.FindStringIndex(entity.AddressText)
 			entity.AddressText = entity.AddressText[:pos[0]] + entity.AddressText[pos[1]:]
+			//entity.AddressText = utils.RemovePos(rt, pos[0], pos[1])
 			found = true
 		}
 	}
@@ -302,6 +307,7 @@ func (ai *AddressInterpreter) extractBuildingNum(entity *Address) {
 			entity.BuildingNum = match
 			pos := reBuildingNum2.FindStringIndex(entity.AddressText)
 			entity.AddressText = entity.AddressText[:pos[0]] + entity.AddressText[pos[1]:]
+			//entity.AddressText = utils.RemovePos(rt, pos[0], pos[1])
 			found = true
 		}
 	}
@@ -344,10 +350,11 @@ func (ai *AddressInterpreter) extractBrackets(entity *Address) string {
 	var found bool
 	var sb strings.Builder
 	for _, match := range matches {
-		if len(match) <= 2 { // 如果没有文字
+		mr := []rune(strings.TrimSpace(match))
+		if len(mr) <= 2 { // 如果没有文字
 			continue
 		}
-		sb.WriteString(match[1 : len(match)-1])
+		sb.WriteString(string(mr[1 : len(mr)-1]))
 		found = true
 	}
 	if found {

@@ -127,3 +127,7 @@ func RemoveRepeatNum(text []rune, n int) string {
 
 	return sb.String()
 }
+
+func RemovePos(text []rune, begin, end int) string {
+	return string(text[:begin]) + string(text[end:])
+}
