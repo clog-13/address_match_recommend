@@ -93,11 +93,11 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 					region.Types == DistrictRegion || region.Types == StreetRegion || region.Types == PlatformL4 ||
 					region.Types == TownRegion { // 县区或街道
 
-					switch string(text[pos+1]) { // 如果是某某路, 街等
-					case "路":
-					case "街":
-					case "巷":
-					case "道":
+					switch { // 如果是某某路, 街等
+					case string(text[pos+1]) == "路":
+					case string(text[pos+1]) == "街":
+					case string(text[pos+1]) == "巷":
+					case string(text[pos+1]) == "道":
 						continue
 					}
 				}
@@ -112,17 +112,17 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 		// 对于省市区全部匹配, 并且当前term属于非完全匹配的时候
 		// 需要忽略掉当前term, 以免污染已经匹配的省市区
 		if !isFullMatch(entry, region) && riv.hasThreeDivision() {
-			switch region.Types {
-			case ProvinceRegion:
+			switch {
+			case region.Types == ProvinceRegion:
 				if region.ID != riv.CurDivision.Province.ID {
 					continue
 				}
-			case CityRegion:
-			case CityLevelDistrict:
+			case region.Types == CityRegion:
+			case region.Types == CityLevelDistrict:
 				if region.ID != riv.CurDivision.City.ID {
 					continue
 				}
-			case DistrictRegion:
+			case region.Types == DistrictRegion:
 				if region.ID != riv.CurDivision.District.ID {
 					continue
 				}
@@ -139,16 +139,16 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 			if region.Types == ProvinceRegion || region.Types == CityRegion ||
 				region.Types == CityLevelDistrict || region.Types == DistrictRegion ||
 				region.Types == StreetRegion || region.Types == TownRegion { // 街道、乡镇
-				switch string(text[pos+1]) {
-				case "区":
-				case "县":
-				case "乡":
-				case "镇":
-				case "村":
-				case "街":
-				case "路":
+				switch {
+				case string(text[pos+1]) == "区":
+				case string(text[pos+1]) == "县":
+				case string(text[pos+1]) == "乡":
+				case string(text[pos+1]) == "镇":
+				case string(text[pos+1]) == "村":
+				case string(text[pos+1]) == "街":
+				case string(text[pos+1]) == "路":
 					continue
-				case "大":
+				case string(text[pos+1]) == "大":
 					if pos+2 <= len(text)-1 {
 						c := string(text[pos+2])
 						if c == "街" || c == "道" {
@@ -284,6 +284,9 @@ func (riv *RegionInterpreterVisitor) hasThreeDivision() bool {
 
 func (riv *RegionInterpreterVisitor) positioning(
 	acceptedRegion *Region, entry *TermIndexEntry, text []rune, pos int) int {
+	if acceptedRegion == nil {
+		return pos
+	}
 	//需要调整指针的情况
 	//1. 山东泰安肥城市桃园镇桃园镇山东省泰安市肥城县桃园镇东伏村
 	//   错误匹配方式：提取省市区时，将【肥城县】中的字符【肥城】匹配成【肥城市】，剩下一个【县】
@@ -321,32 +324,32 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 
 	// 非严格模式 || 只有一个父项
 	needUpdateCityAndProvince := len(entry.Items) == 1
-	switch region.Types {
-	case ProvinceRegion:
-	case ProvinceLevelCity1:
+	switch {
+	case region.Types == ProvinceRegion:
+	case region.Types == ProvinceLevelCity1:
 		riv.CurDivision.Province = region
 		riv.CurDivision.City = nil
-	case CityRegion:
-	case ProvinceLevelCity2:
+	case region.Types == CityRegion:
+	case region.Types == ProvinceLevelCity2:
 		riv.CurDivision.City = region
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = riv.persister.GetRegion(region.ParentID)
 		}
-	case CityLevelDistrict:
+	case region.Types == CityLevelDistrict:
 		riv.CurDivision.City = region
 		riv.CurDivision.District = region
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = riv.persister.GetRegion(region.ParentID)
 		}
-	case DistrictRegion:
+	case region.Types == DistrictRegion:
 		riv.CurDivision.District = region
 		// 成功匹配了区县，则强制更新地级市
 		riv.CurDivision.City = riv.persister.GetRegion(riv.CurDivision.District.ParentID)
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = riv.persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
-	case StreetRegion:
-	case PlatformL4:
+	case region.Types == StreetRegion:
+	case region.Types == PlatformL4:
 		if riv.CurDivision.Street == nil {
 			riv.CurDivision.Street = region
 		}
@@ -356,7 +359,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
 		}
-	case TownRegion:
+	case region.Types == TownRegion:
 		if riv.CurDivision.Town == nil {
 			riv.CurDivision.Town = region
 		}
@@ -366,7 +369,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
 		}
-	case VillageRegion:
+	case region.Types == VillageRegion:
 		if riv.CurDivision.Village == nil {
 			riv.CurDivision.Village = region
 		}
@@ -418,15 +421,15 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 			continue
 		}
 		r := v.Value
-		switch r.Types {
-		case StreetRegion:
-		case PlatformL4:
+		switch {
+		case r.Types == StreetRegion:
+		case r.Types == PlatformL4:
 			street = r
 			continue
-		case TownRegion:
+		case r.Types == TownRegion:
 			town = r
 			continue
-		case VillageRegion:
+		case r.Types == VillageRegion:
 			village = r
 			continue
 		}
@@ -455,14 +458,14 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 	}
 
 	if least != nil {
-		switch least.Types {
-		case ProvinceRegion:
-		case ProvinceLevelCity1:
+		switch {
+		case least.Types == ProvinceRegion:
+		case least.Types == ProvinceLevelCity1:
 			riv.CurDivision.City = nil
 			riv.CurDivision.District = nil
 			return
-		case CityRegion:
-		case ProvinceLevelCity2:
+		case least.Types == CityRegion:
+		case least.Types == ProvinceLevelCity2:
 			riv.CurDivision.District = nil
 			return
 		default:
@@ -538,9 +541,9 @@ func (riv *RegionInterpreterVisitor) Reset() {
 	riv.DeepMostDivision.Town = nil
 	riv.DeepMostDivision.Village = nil
 
-	riv.DeepMostDivision.RoadText = ""
-	riv.DeepMostDivision.RoadNum = ""
-	riv.DeepMostDivision.BuildingNum = ""
+	riv.CurDivision.RoadText = ""
+	riv.CurDivision.RoadNum = ""
+	riv.CurDivision.BuildingNum = ""
 	riv.CurDivision.Province = nil
 	riv.CurDivision.City = nil
 	riv.CurDivision.District = nil

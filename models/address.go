@@ -8,18 +8,21 @@ type Address struct {
 	RoadNum     string `gorm:"type:text;comment:道路号" json:"road_num"`
 	BuildingNum string `gorm:"type:text;comment:建筑信息" json:"building_num"`
 
-	ProvinceId uint
-	Province   *Region `gorm:"foreignKey:division_id;references:province_id"`
-	CityId     uint
-	City       *Region `gorm:"foreignKey:division_id;references:city_id"`
-	DistrictId uint
-	District   *Region `gorm:"foreignKey:division_id;references:district_id"`
-	StreetId   uint
-	Street     *Region `gorm:"foreignKey:division_id;references:street_id"`
-	TownId     uint
-	Town       *Region `gorm:"foreignKey:division_id;references:town_id"`
-	VillageId  uint
-	Village    *Region `gorm:"foreignKey:division_id;references:village_id"`
+	ProvinceId, CityId, DistrictId, StreetId, VillageId, TownId uint
+
+	Province *Region `gorm:"-"`
+	City     *Region `gorm:"-"`
+	District *Region `gorm:"-"`
+	Street   *Region `gorm:"-"`
+	Town     *Region `gorm:"-"`
+	Village  *Region `gorm:"-"`
+
+	//Province *Region `gorm:"foreignKey:division_id;references:province_id"`
+	//City     *Region `gorm:"foreignKey:division_id;references:city_id"`
+	//District *Region `gorm:"foreignKey:division_id;references:district_id"`
+	//Street   *Region `gorm:"foreignKey:division_id;references:street_id"`
+	//Town     *Region `gorm:"foreignKey:division_id;references:town_id"`
+	//Village  *Region `gorm:"foreignKey:division_id;references:village_id"`
 }
 
 // LeastRegion 获取最小一级有效行政区域对象
@@ -57,11 +60,11 @@ func (d *Address) SetTown(value *Region) {
 		d.Town = nil
 		return
 	}
-	switch value.Types {
-	case TownRegion:
+	switch {
+	case value.Types == TownRegion:
 		d.Town = value
-	case StreetRegion:
-	case PlatformL4:
+	case value.Types == StreetRegion:
+	case value.Types == PlatformL4:
 		d.Street = value
 	default:
 		d.Town = nil

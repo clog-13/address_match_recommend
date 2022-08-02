@@ -21,8 +21,7 @@ const (
 
 // Region 行政区域实体
 type Region struct {
-	ID         uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
-	DivisionID uint
+	ID uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 
 	ParentID uint   `gorm:"type:uint;" json:"region_parent_id"`
 	Name     string `gorm:"type:string;" json:"region_name"`
@@ -35,10 +34,10 @@ type Region struct {
 }
 
 func (r *Region) IsTown() bool {
-	switch r.Types {
-	case CountryRegion:
+	switch {
+	case r.Types == CountryRegion:
 		return true
-	case StreetRegion:
+	case r.Types == StreetRegion:
 		if r.Name == "" {
 			return false
 		}
