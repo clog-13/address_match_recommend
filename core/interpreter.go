@@ -442,9 +442,8 @@ func (ai *AddressInterpreter) removeRedundancy(entity *Address) {
 }
 
 func (ai *AddressInterpreter) extractRoad(entity *Address) {
-	// 如果已经提取过了
 	if len(entity.AddressText) == 0 || len(entity.RoadText) > 0 {
-		return
+		return // 如果已经提取过了
 	}
 	matches := reROAD.FindStringSubmatch(entity.AddressText)
 	if len(matches) > 0 {
@@ -457,8 +456,7 @@ func (ai *AddressInterpreter) extractRoad(entity *Address) {
 			return
 		}
 		entity.RoadText = fixRoad(road)
-		// 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
-		if len(roadNum) == 1 {
+		if len(roadNum) == 1 { // 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
 			entity.AddressText = roadNum + leftText
 		} else {
 			entity.RoadNum = roadNum

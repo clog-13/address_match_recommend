@@ -33,6 +33,24 @@ var (
 	}
 )
 
+func TestExtraRoad(t *testing.T) {
+	interpreter := NewAddressInterpreter(models.NewAddressPersister())
+	arr := []string{
+		"山东青岛即墨市龙山镇官庄村即墨市龙山街道办事处管庄村",               // 镇宁路
+		"河北省石家庄市鹿泉市镇宁路贺庄回迁楼1号楼1单元602室",             // 镇宁路
+		"北京北京海淀区北京市海淀区万寿路翠微西里13号楼1403室",            // 万寿路
+		",海南海南省直辖市县定安县见龙大道财政局宿舍楼702",               // 见龙大道
+		"河北石家庄长安区南村镇强镇街51号南村工商管理局",                 // 强镇街
+		"吉林长春绿园区长春汽车产业开发区（省级）（特殊乡镇）长沈路1000号力旺格林春天", // 长沈路
+	}
+	for _, v := range arr {
+		addr := &models.Address{AddressText: v}
+		interpreter.Interpret(addr)
+		fmt.Println(addr.RoadNum)
+	}
+
+}
+
 func TestAddressInterpreter_Interpret(t *testing.T) {
 	interpreter := NewAddressInterpreter(models.NewAddressPersister())
 	addr := &models.Address{}
