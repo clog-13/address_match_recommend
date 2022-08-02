@@ -466,6 +466,15 @@ func loadDocunentsFromCache(address *Address) []Document {
 }
 
 func loadDocuments(addr *Address) []Document {
+	docs := make([]Document, 0)
+	for _, v := range new(AddressPersister).LoadAddrs() {
+
+		docs = append(docs, analyze(&v))
+	}
+
+}
+
+func loadDocumentsCache(addr *Address) []Document {
 	persister := new(AddressPersister)
 	root := persister.RootRegion()
 	for _, province := range root.Children {

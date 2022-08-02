@@ -16,9 +16,8 @@ func TestInsertAddress(t *testing.T) {
 	}
 
 	addr.Province = &Region{
-		DivisionID: 29,
-		Name:       "<>clog<>d<>p",
-		Alias:      "<>clog<>d<>p",
+		Name:  "<>clog<>d<>p",
+		Alias: "<>clog<>d<>p",
 	}
 	addr.Province.Children = append(addr.Province.Children, &Region{
 		Name:  "pc",
@@ -30,9 +29,8 @@ func TestInsertAddress(t *testing.T) {
 	})
 
 	addr.Town = &Region{
-		DivisionID: 22,
-		Name:       "<>clog<>d<>t",
-		Alias:      "<>clog<>d<>t",
+		Name:  "<>clog<>d<>t",
+		Alias: "<>clog<>d<>t",
 	}
 	DB.Create(addr)
 }

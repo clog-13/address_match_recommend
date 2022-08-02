@@ -112,3 +112,9 @@ func (ap *AddressPersister) LoadAddrsPCD(provinceId, cityId, countryId uint) []A
 	DB.Where("province_id = ? AND city_id = ? AND district_id = ?", provinceId, cityId, countryId).Find(&addrs)
 	return addrs
 }
+
+func (ap *AddressPersister) LoadAddrs() []Address {
+	var addrs []Address
+	DB.Find(&addrs)
+	return addrs
+}
