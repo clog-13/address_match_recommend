@@ -95,7 +95,7 @@ func SortSimilarDocs(q *Query) {
 
 // 分词，设置词条权重
 func analyze(addr *Address) Document {
-	doc := NewDocument()
+	doc := NewDocument(uint(addr.Id))
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
 	tokens := make([]string, 0)
@@ -561,7 +561,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	if qTextTermCount >= 2 && dTextTermMatchCount >= 2 {
 		textTermDensity = math.Sqrt(float64(dTextTermMatchCount/(matchEnd-matchStart+1)))*0.5 + 0.5
 	}
-	var simiDoc *SimilarDocument
+	var simiDoc SimilarDocument
 	if explain && topN > 1 {
 		simiDoc = NewSimilarDocument(doc)
 	}

@@ -12,7 +12,8 @@ import (
 
 var (
 	addrs = []string{
-		"()四{}川{aa}(bb)成（）都（cc）武[]侯[dd]区【】武【ee】侯<>大<ff>道〈〉铁〈gg〉佛「」段「hh」千盛百货对面200米金履三路288号绿地圣路易名邸[]",
+		"湖北武汉汉阳区汉阳经济技术开发区车城东路901号",
+		//"()四{}川{aa}(bb)成（）都（cc）武[]侯[dd]区【】武【ee】侯<>大<ff>道〈〉铁〈gg〉佛「」段「hh」千盛百货对面200米金履三路288号绿地圣路易名邸[]",
 		//"抚顺顺城区将军桥【将军水泥厂住宅4-1-102】 (将军桥附近)",
 		//"辽宁沈阳于洪区沈阳市辽中县县城虹桥商厦西侧三单元外跨楼梯3-2-23-", // 冗余
 		//"北京海淀区丹棱街18号创富大厦1106",
@@ -47,10 +48,19 @@ func TestExtraRoad(t *testing.T) {
 		interpreter.Interpret(addr)
 		fmt.Println(addr.RoadText)
 	}
-
 }
 
-func TestAddressInterpreter_Interpret(t *testing.T) {
+func TestInterpret(t *testing.T) {
+	interpreter := NewAddressInterpreter(models.NewAddressPersister())
+	addr := &models.Address{}
+	for _, v := range addrs {
+		addr.AddressText = v
+		interpreter.Interpret(addr)
+		fmt.Println(addr, addr.Province.Name, addr.City.Name, addr.District.Name)
+	}
+}
+
+func TestInterpretNoChar(t *testing.T) {
 	interpreter := NewAddressInterpreter(models.NewAddressPersister())
 	addr := &models.Address{}
 	for _, v := range nochar {

@@ -18,8 +18,8 @@ type Document struct {
 	RoadNumValue int
 }
 
-func NewDocument() Document {
-	return Document{}
+func NewDocument(id uint) Document {
+	return Document{Id: id}
 }
 
 // GetTerm 获取词语对象。
