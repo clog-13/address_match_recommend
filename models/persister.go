@@ -1,13 +1,5 @@
 package models
 
-import (
-	"bufio"
-	"encoding/base64"
-	"fmt"
-	"io"
-	"os"
-)
-
 type AddressPersister struct {
 	// REGION_TREE为中国国家区域对象，全国所有行政区域都以树状结构加载到REGION_TREE
 	// 通过 Region#getChildren() 获取下一级列表
@@ -119,53 +111,4 @@ func (ap *AddressPersister) LoadAddrsPCD(provinceId, cityId, countryId uint) []A
 	var addrs []Address
 	DB.Where("province_id = ? AND city_id = ? AND district_id = ?", provinceId, cityId, countryId).Find(&addrs)
 	return addrs
-}
-
-//func (ap *AddressPersister) importAddress(addrs []Address) int {
-//	batchSize, count, imported, duplicate := 2000, 0, 0, 0
-//	batch := make([]Address, 0)
-//	for _,v:=range addrs {
-//		if {
-//
-//		}
-//
-//	}
-//}
-
-func ReadDat(filepath string) {
-	//path, _ := os.Getwd()
-	file, err := os.OpenFile(filepath, os.O_RDWR, 0666)
-	if err != nil {
-		fmt.Println("Open file error!", err)
-		return
-	}
-	defer file.Close()
-
-	buf := bufio.NewReader(file)
-	for {
-		line, err := buf.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("File read ok!")
-				break
-			} else {
-				fmt.Println("Read file error!", err)
-				return
-			}
-		}
-
-		//line = strings.TrimSpace(line)
-		fmt.Println(line)
-		fmt.Println(decode(line))
-	}
-}
-
-func decode(dat string) string {
-	str, err := base64.StdEncoding.DecodeString(dat)
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	return string(str)
-	//decoder := base64.NewDecoder(base64.StdEncoding)
-	//str, _ := base64.StdEncoding.DecodeString(dat)
 }

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	. "github.com/xiiv13/address_match_recommend/models"
 	"github.com/xiiv13/address_match_recommend/segment"
 	"github.com/xiiv13/address_match_recommend/utils"
@@ -25,6 +24,8 @@ var (
 	interpreter = NewAddressInterpreter(persister)
 	segmenter   = segment.NewGseSegment()
 
+	allDocsLen   = 0
+	msi          = map[string]int{}
 	VectorsCache = make(map[string][]Document)
 	IdfCache     = make(map[string]map[string]float64)
 )
@@ -163,6 +164,16 @@ func analyze(addr *Address) Document {
 			} else {
 				v.Idf = 4.0
 			}
+			//idf := 0.0
+			//if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
+			//	idf = 2.0
+			//} else {
+			//	idf = math.Log(float64(len(docs) / (v + 1)))
+			//}
+			//if idf < 0.0 {
+			//	idf = 0.0
+			//}
+			//idfs[k] = idf
 		}
 	}
 
@@ -222,17 +233,17 @@ func generateIDFCacheEntryKey(term *Term) string {
 func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) float64 {
 	value := BoostM
 	types := termTypes
-	switch types {
-	case ProvinceTerm:
-	case CityTerm:
-	case DistrictTerm:
+	switch {
+	case types == ProvinceTerm:
+	case types == CityTerm:
+	case types == DistrictTerm:
 		value = BoostXl // 省市区、道路出现频次高，IDF值较低，但重要程度最高，因此给予比较高的加权权重
-	case StreetTerm:
+	case types == StreetTerm:
 		value = BoostXs //一般人对于城市街道范围概念不强，在地址中随意选择街道的可能性较高，因此降权处理
-	case TextTerm:
+	case types == TextTerm:
 		value = BoostM
-	case TownTerm:
-	case VillageTerm:
+	case types == TownTerm:
+	case types == VillageTerm:
 		value = BoostXs
 		if TownTerm == types { //乡镇
 			//查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
@@ -260,8 +271,8 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 				}
 			}
 		}
-	case RoadTerm:
-	case RoadNumTerm:
+	case types == RoadTerm:
+	case types == RoadNumTerm:
 		if qdoc.Town == nil || qdoc.Village == nil { // 有乡镇有村庄，不再考虑道路、门牌号的加权
 			if RoadTerm == types { //道路
 				if qdoc.Road != nil && ddoc.Road != nil {
@@ -301,26 +312,26 @@ func translateRoadNum(text string) int {
 			sb += string(c)
 			continue
 		}
-		switch string(c) { // 中文全角数字字符
-		case "０":
+		switch { // 中文全角数字字符
+		case string(c) == "０":
 			sb += "0"
-		case "１":
+		case string(c) == "１":
 			sb += "1"
-		case "２":
+		case string(c) == "２":
 			sb += "2"
-		case "３":
+		case string(c) == "３":
 			sb += "3"
-		case "４":
+		case string(c) == "４":
 			sb += "4"
-		case "５":
+		case string(c) == "５":
 			sb += "5"
-		case "６":
+		case string(c) == "６":
 			sb += "6"
-		case "７":
+		case string(c) == "７":
 			sb += "7"
-		case "８":
+		case string(c) == "８":
 			sb += "8"
-		case "９":
+		case string(c) == "９":
 			sb += "9"
 		}
 	}
@@ -355,21 +366,21 @@ func translateRoadNum(text string) int {
 			sb += "1"
 		case string(c) == "二":
 			sb += "2"
-		case "三":
+		case string(c) == "三":
 			sb += "3"
-		case "四":
+		case string(c) == "四":
 			sb += "4"
-		case "五":
+		case string(c) == "五":
 			sb += "5"
-		case "六":
+		case string(c) == "六":
 			sb += "6"
-		case "七":
+		case string(c) == "七":
 			sb += "7"
-		case "八":
+		case string(c) == "八":
 			sb += "8"
-		case "九":
+		case string(c) == "九":
 			sb += "9"
-		case "十":
+		case string(c) == "十":
 			isTen = true
 		}
 		if len(sb) > 0 {
@@ -392,16 +403,16 @@ func translateRoadNum(text string) int {
 }
 
 func loadDocunentsFromCache(address *Address) []Document {
-
 	cacheKey := buildCacheKey(address)
 	if len(cacheKey) == 0 {
 		return nil
 	}
 	docs := make([]Document, 0)
-	// 从内存读取，如果未缓存到内存，则从文件加载到内存中
-	docs = VectorsCache[cacheKey]
+
+	docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
 	if docs == nil {
-		docs = loadDocumentsFromDatabase(address)
+		docs = loadDocuments(address)
+		allDocsLen = len(docs)
 		if docs == nil {
 			docs = make([]Document, 0)
 			VectorsCache[cacheKey] = docs
@@ -414,6 +425,7 @@ func loadDocunentsFromCache(address *Address) []Document {
 			idfs = IdfCache[cacheKey]
 			if idfs == nil {
 				termReferences := statInverseDocRefers(docs)
+
 				idfs = make(map[string]float64, len(termReferences))
 				for k, v := range termReferences {
 					idf := 0.0
@@ -453,7 +465,7 @@ func loadDocunentsFromCache(address *Address) []Document {
 	return docs
 }
 
-func loadDocumentsFromDatabase(addr *Address) []Document {
+func loadDocuments(addr *Address) []Document {
 	persister := new(AddressPersister)
 	root := persister.RootRegion()
 	for _, province := range root.Children {
@@ -596,7 +608,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		return 0
 	}
 	s := sumQD / (math.Sqrt(sumQQ * sumDD))
-	fmt.Println(s)
+
 	if explain && topN > 1 {
 		simiDoc.Similarity = s
 		query.AddSimiDoc(simiDoc)
@@ -607,7 +619,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 }
 
 func buildCacheKey(address *Address) string {
-	if address == nil || address.Province != nil || address.City != nil {
+	if address == nil || address.Province == nil || address.City == nil {
 		return ""
 	}
 
