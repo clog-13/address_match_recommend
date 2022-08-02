@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/xiiv13/address_match_recommend/index"
 	. "github.com/xiiv13/address_match_recommend/models"
 	"github.com/xiiv13/address_match_recommend/utils"
 	"regexp"
@@ -153,14 +154,14 @@ func init() {
 }
 
 type AddressInterpreter struct {
-	indexBuilder *TermIndexBuilder
-	visitor      *RegionInterpreterVisitor
+	indexBuilder *index.TermIndexBuilder
+	visitor      *index.RegionInterpreterVisitor
 }
 
 func NewAddressInterpreter(persister *AddressPersister) *AddressInterpreter {
 	return &AddressInterpreter{
-		indexBuilder: NewTermIndexBuilder(persister),
-		visitor:      NewRegionInterpreterVisitor(persister),
+		indexBuilder: index.NewTermIndexBuilder(persister),
+		visitor:      index.NewRegionInterpreterVisitor(persister),
 	}
 }
 
@@ -177,6 +178,7 @@ func (ai *AddressInterpreter) Interpret(entity *Address) {
 	// 去除包括的特殊字符
 	brackets = utils.Remove([]rune(brackets), specialChars2, "")
 	entity.AddressText = utils.Remove([]rune(entity.AddressText), specialChars2, "")
+
 	// 提取行政规划标准地址
 	ai.extractRegion(entity)
 	// 规整省市区街道等匹配的结果
@@ -317,7 +319,7 @@ func (ai *AddressInterpreter) removeSpecialChars(entity *Address) {
 	text := utils.Remove([]rune(entity.AddressText), specialChars1, "")
 
 	// 删除连续出现5个以上的数字 TODO: 可能会出现, 这个暂做这个处理
-	text = utils.RemoveRepeatNum(text, 6)
+	text = utils.RemoveRepeatNum([]rune(text), 6)
 	entity.AddressText = text
 
 	// 去除building
@@ -327,7 +329,7 @@ func (ai *AddressInterpreter) removeSpecialChars(entity *Address) {
 	}
 	build = utils.Remove([]rune(entity.AddressText), specialChars1, "-一－_#")
 
-	build = utils.RemoveRepeatNum(text, 6)
+	build = utils.RemoveRepeatNum([]rune(text), 6)
 	entity.BuildingNum = build
 }
 
@@ -371,7 +373,8 @@ func (ai *AddressInterpreter) extractRegion(entity *Address) {
 	entity.Street = ai.visitor.GetDevision().Street
 	entity.Town = ai.visitor.GetDevision().Town
 	entity.Village = ai.visitor.GetDevision().Village
-	entity.AddressText = entity.AddressText[ai.visitor.EndPosition()+1:]
+	entity.AddressText = string([]rune(entity.AddressText)[ai.visitor.EndPosition()+1:])
+	//entity.AddressText = entity.AddressText[ai.visitor.EndPosition()+1:]
 
 }
 

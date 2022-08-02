@@ -45,7 +45,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 
 	queryAddr := Address{AddressText: addressText}
 	interpreter.Interpret(&queryAddr) // 解析地址
-	queryDoc := analyse(&queryAddr)   // 为词条计算特征值
+	queryDoc := analyze(&queryAddr)   // 为词条计算特征值
 
 	query := Query{ // 生成查询对象
 		TopN:      topN,
@@ -93,7 +93,7 @@ func SortSimilarDocs(q *Query) {
 }
 
 // 分词，设置词条权重
-func analyse(addr *Address) Document {
+func analyze(addr *Address) Document {
 	doc := NewDocument()
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
@@ -107,7 +107,6 @@ func analyse(addr *Address) Document {
 	terms := make([]*Term, 0)
 	// 生成term
 	if addr.Town != nil {
-
 		doc.Town = NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
 	}
@@ -131,6 +130,8 @@ func analyse(addr *Address) Document {
 
 	//translateBuilding()
 
+	// TODO
+
 	// 地址文本分词后的token
 	for _, text := range tokens {
 		if len(text) == 0 {
@@ -141,8 +142,7 @@ func analyse(addr *Address) Document {
 				continue
 			}
 		}
-		newTerm := NewTerm(TextTerm, text)
-		terms = append(terms, newTerm)
+		terms = append(terms, NewTerm(TextTerm, text))
 	}
 
 	idfs, ok := IdfCache[buildCacheKey(addr)]
@@ -156,7 +156,16 @@ func analyse(addr *Address) Document {
 				v.Idf = idf
 			}
 		}
+	} else {
+		for _, v := range terms {
+			if utils.IsNumericChars(v.Text) || utils.IsAnsiChars(v.Text) {
+				v.Idf = 2.0
+			} else {
+				v.Idf = 4.0
+			}
+		}
 	}
+
 	doc.Terms = terms
 	return doc
 }
@@ -341,10 +350,10 @@ func translateRoadNum(text string) int {
 			isTen = false
 		}
 
-		switch string(c) {
-		case "一":
+		switch {
+		case string(c) == "一":
 			sb += "1"
-		case "二":
+		case string(c) == "二":
 			sb += "2"
 		case "三":
 			sb += "3"
@@ -456,7 +465,7 @@ func loadDocumentsFromDatabase(addr *Address) []Document {
 				}
 				docs := make([]Document, 0)
 				for _, addr := range addrs {
-					docs = append(docs, analyse(&addr))
+					docs = append(docs, analyze(&addr))
 				}
 				key := buildCacheKey(&addrs[0])
 				VectorsCache[key] = docs
@@ -468,7 +477,7 @@ func loadDocumentsFromDatabase(addr *Address) []Document {
 					}
 					docs := make([]Document, 0)
 					for _, addr := range addrs {
-						docs = append(docs, analyse(&addr))
+						docs = append(docs, analyze(&addr))
 					}
 					key := buildCacheKey(&addrs[0])
 					VectorsCache[key] = docs

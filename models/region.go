@@ -5,6 +5,20 @@ import (
 	"strings"
 )
 
+const (
+	CountryRegion      = 10
+	ProvinceRegion     = 100
+	ProvinceLevelCity1 = 150
+	ProvinceLevelCity2 = 151
+	CityRegion         = 200
+	CityLevelDistrict  = 250
+	DistrictRegion     = 300
+	StreetRegion       = 450
+	PlatformL4         = 460
+	TownRegion         = 400
+	VillageRegion      = 410
+)
+
 // Region 行政区域实体
 type Region struct {
 	ID         uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
@@ -12,7 +26,7 @@ type Region struct {
 
 	ParentID uint   `gorm:"type:uint;" json:"region_parent_id"`
 	Name     string `gorm:"type:string;" json:"region_name"`
-	Alias    string `gorm:"column:type;type:string;" json:"region_alias"`
+	Alias    string `gorm:"type:string;" json:"region_alias"`
 	Types    int    `gorm:"type:SMALLINT;" json:"region_types"`
 
 	Children     []*Region      `gorm:"-"`
@@ -74,6 +88,9 @@ func (r *Region) OrderedNameAndAlias() []string {
 }
 
 func (r *Region) Equal(t *Region) bool {
+	if t == nil {
+		return false
+	}
 	return r.ParentID == t.ParentID && r.Name == t.Name &&
 		r.Alias == t.Alias && r.Types == t.Types
 }

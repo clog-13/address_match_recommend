@@ -46,3 +46,7 @@ func TestRemove(t *testing.T) {
 	s = Remove([]rune("江苏泰州兴化市昌荣镇【康琴网吧】(昌荣镇附近)"), []rune("{}【】〈〉<>[]「」“”（）()"), "")
 	fmt.Println(s)
 }
+
+func TestHead(t *testing.T) {
+	fmt.Println(Head([]rune("江苏泰州兴化市昌荣镇【康琴网吧】(昌荣镇附近)"), 2))
+}

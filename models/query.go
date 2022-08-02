@@ -9,7 +9,7 @@ type Query struct {
 }
 
 // AddSimiDoc 添加一个相似文档, 只保留相似度最高的top N条相似文档,相似度最低的从simiDocs中删除
-func (q Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
+func (q *Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
 	if simiDoc.Similarity <= 0 {
 		return false
 	}
@@ -33,7 +33,7 @@ func (q Query) AddSimiDoc(simiDoc *SimilarDocument) bool {
 	return false
 }
 
-func (q Query) AddSimiDocs(doc Document, simi float64) bool {
+func (q *Query) AddSimiDocs(doc Document, simi float64) bool {
 	if simi <= 0 {
 		return false
 	}

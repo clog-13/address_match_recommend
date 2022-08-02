@@ -1,4 +1,4 @@
-package core
+package index
 
 import (
 	. "github.com/xiiv13/address_match_recommend/models"
@@ -50,13 +50,13 @@ func (tib *TermIndexBuilder) indexRegions(regions []*Region) {
 			(region.IsTown() || strings.HasSuffix(region.Name, "街道"))
 		reName := []rune(region.Name)
 		if autoAlias && len(reName) == 5 {
-			switch string(reName[2]) {
-			case "路":
-			case "街":
-			case "门":
-			case "镇":
-			case "村":
-			case "区":
+			switch {
+			case string(reName[2]) == "路":
+			case string(reName[2]) == "街":
+			case string(reName[2]) == "门":
+			case string(reName[2]) == "镇":
+			case string(reName[2]) == "村":
+			case string(reName[2]) == "区":
 				autoAlias = false
 			}
 		}
@@ -140,25 +140,29 @@ func (tib *TermIndexBuilder) deepFirstQueryRound(
 }
 
 func convertRegionType(region *Region) int {
-	switch region.Types {
-	case CountryRegion:
+	rt := region.Types
+	if rt == CountryRegion {
 		return CountryTerm
-	case ProvinceRegion:
-	case ProvinceLevelCity1:
+	}
+	if rt == ProvinceRegion || rt == ProvinceLevelCity1 {
 		return ProvinceTerm
-	case CityRegion:
-	case ProvinceLevelCity2:
+	}
+	if rt == CityRegion || rt == ProvinceLevelCity2 {
 		return CityTerm
-	case DistrictRegion:
-	case CityLevelDistrict:
+	}
+	if rt == DistrictRegion || rt == CityLevelDistrict {
 		return DistrictTerm
-	case PlatformL4:
+	}
+	if rt == PlatformL4 {
 		return StreetTerm
-	case TownRegion:
+	}
+	if rt == TownRegion {
 		return TownTerm
-	case VillageRegion:
+	}
+	if rt == VillageRegion {
 		return VillageTerm
-	case StreetRegion:
+	}
+	if rt == StreetRegion {
 		if region.IsTown() {
 			return TownTerm
 		} else {

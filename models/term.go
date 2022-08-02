@@ -1,5 +1,20 @@
 package models
 
+const (
+	UndefinedTerm = '0'
+	CountryTerm   = 'C'
+	ProvinceTerm  = '1'
+	CityTerm      = '2'
+	DistrictTerm  = '3'
+	StreetTerm    = '4'
+	TownTerm      = 'T'
+	VillageTerm   = 'V'
+	RoadTerm      = 'R'
+	RoadNumTerm   = 'N'
+	TextTerm      = 'X'
+	IgnoreTerm    = 'I'
+)
+
 // Term 词条
 type Term struct {
 	Id uint `gorm:"primaryKey;"`
@@ -20,12 +35,12 @@ func NewTerm(types int, text string) *Term {
 }
 
 func (t *Term) GetIdf() float64 {
-	switch t.Types {
-	case ProvinceTerm:
-	case CityTerm:
-	case DistrictTerm:
+	switch {
+	case t.Types == ProvinceTerm:
+	case t.Types == CityTerm:
+	case t.Types == DistrictTerm:
 		t.Idf = 0.0
-	case StreetTerm:
+	case t.Types == StreetTerm:
 		t.Idf = 1.0
 	}
 	return t.Idf

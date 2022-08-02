@@ -10,7 +10,7 @@ func NewSimilarDocument(doc Document) *SimilarDocument {
 	return &SimilarDocument{Doc: doc}
 }
 
-func (s SimilarDocument) AddMatchedTerm(value *MatchedTerm) {
+func (s *SimilarDocument) AddMatchedTerm(value *MatchedTerm) {
 	if s.MatchedTerms == nil {
 		s.MatchedTerms = make(map[string]*MatchedTerm)
 	}

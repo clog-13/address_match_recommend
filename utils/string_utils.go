@@ -104,25 +104,25 @@ func Remove(text []rune, chars []rune, exclude string) string {
 	}
 }
 
-func RemoveRepeatNum(text string, n int) string {
+func RemoveRepeatNum(text []rune, n int) string {
 	if len(text) < n {
-		return text
+		return string(text)
 	}
 	var sb strings.Builder
 	var cnt int
-	for i, v := range []rune(text) {
+	for i, v := range text {
 		if v >= '0' && v <= '9' {
 			cnt++
 			continue
 		}
 		if cnt > 0 && cnt < n {
-			sb.WriteString(text[i-cnt : i])
+			sb.WriteString(string(text[i-cnt : i]))
 		}
 		cnt = 0
 		sb.WriteRune(v)
 	}
 	if cnt > 0 && cnt < n {
-		sb.WriteString(text[len(text)-cnt:])
+		sb.WriteString(string(text[len(text)-cnt:]))
 	}
 
 	return sb.String()

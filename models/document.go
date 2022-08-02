@@ -23,7 +23,7 @@ func NewDocument() Document {
 }
 
 // GetTerm 获取词语对象。
-func (d Document) GetTerm(term string) *Term {
+func (d *Document) GetTerm(term string) *Term {
 	if len(d.Terms) == 0 || d.Terms == nil {
 		return nil
 	}
@@ -39,6 +39,6 @@ func (d Document) GetTerm(term string) *Term {
 	return d.TermsMap[term]
 }
 
-func (d Document) TableName() string {
+func (d *Document) TableName() string {
 	return "document"
 }

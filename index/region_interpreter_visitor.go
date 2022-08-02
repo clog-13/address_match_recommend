@@ -1,4 +1,4 @@
-package core
+package index
 
 import (
 	. "github.com/xiiv13/address_match_recommend/models"
@@ -13,7 +13,7 @@ var (
 
 // RegionInterpreterVisitor 基于倒排索引搜索匹配 省市区行政区划的访问者
 type RegionInterpreterVisitor struct {
-	Persister *AddressPersister
+	persister *AddressPersister
 
 	CurrentLevel, DeepMostLevel            int
 	CurrentPos, DeepMostPos                int
@@ -27,7 +27,7 @@ type RegionInterpreterVisitor struct {
 
 func NewRegionInterpreterVisitor(ap *AddressPersister) *RegionInterpreterVisitor {
 	newRiv := &RegionInterpreterVisitor{
-		Persister:        ap,
+		persister:        ap,
 		CurrentPos:       -1,
 		DeepMostPos:      -1,
 		DeepMostDivision: Address{},
@@ -85,7 +85,7 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 
 		region := item.Value
 		// 从未匹配上任何一个省市区，则从全部被索引对象中找出一个级别最高的
-		if riv.CurDivision.Province != nil {
+		if riv.CurDivision.Province == nil {
 			// 在为匹配上任务省市区情况下, 由于 `xx路` 的xx是某县区/市区/省的别名, 如江苏路, 绍兴路等等, 导致错误的匹配。
 			// 如 延安路118号, 错误匹配上了延安县
 			if !isFullMatch(entry, region) && pos+1 <= len(text)-1 { // 使用别名匹配，并且后面还有一个字符
@@ -167,7 +167,7 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 
 		// 2. 中间缺一级的情况
 		if mostPriority == -1 || mostPriority > 2 {
-			parent := riv.Persister.GetRegion(region.ParentID)
+			parent := riv.persister.GetRegion(region.ParentID)
 			// 2.1 缺地级市
 			if riv.CurDivision.City == nil && riv.CurDivision.Province != nil &&
 				region.Types == DistrictRegion && riv.CurDivision.Province.ID == parent.ParentID {
@@ -224,7 +224,7 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 				riv.CurDivision.City != nil && riv.CurDivision.Province != nil &&
 				isFullMatch(entry, region) && // 使用的全名匹配
 				riv.CurDivision.City.ID != region.ParentID {
-				city := riv.Persister.GetRegion(region.ParentID) // 区县的地级市
+				city := riv.persister.GetRegion(region.ParentID) // 区县的地级市
 				if city.ParentID == riv.CurDivision.Province.ID && !riv.hasThreeDivision() {
 					mostPriority = 4
 					acceptableItem = item
@@ -237,8 +237,8 @@ func (riv *RegionInterpreterVisitor) findAcceptableItem(
 		if region.Types == StreetRegion || region.Types == TownRegion ||
 			region.Types == VillageRegion || region.Types == PlatformL4 {
 			if riv.CurDivision.District != nil {
-				parent := riv.Persister.GetRegion(region.ParentID) // parent为区县
-				parent = riv.Persister.GetRegion(parent.ParentID)  // parent为地级市
+				parent := riv.persister.GetRegion(region.ParentID) // parent为区县
+				parent = riv.persister.GetRegion(parent.ParentID)  // parent为地级市
 				if riv.CurDivision.City != nil && riv.CurDivision.City.ID == parent.ID {
 					mostPriority = 5
 					acceptableItem = item
@@ -330,20 +330,20 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 	case ProvinceLevelCity2:
 		riv.CurDivision.City = region
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = riv.Persister.GetRegion(region.ParentID)
+			riv.CurDivision.Province = riv.persister.GetRegion(region.ParentID)
 		}
 	case CityLevelDistrict:
 		riv.CurDivision.City = region
 		riv.CurDivision.District = region
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = riv.Persister.GetRegion(region.ParentID)
+			riv.CurDivision.Province = riv.persister.GetRegion(region.ParentID)
 		}
 	case DistrictRegion:
 		riv.CurDivision.District = region
 		// 成功匹配了区县，则强制更新地级市
-		riv.CurDivision.City = riv.Persister.GetRegion(riv.CurDivision.District.ParentID)
+		riv.CurDivision.City = riv.persister.GetRegion(riv.CurDivision.District.ParentID)
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = riv.Persister.GetRegion(riv.CurDivision.City.ParentID)
+			riv.CurDivision.Province = riv.persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
 	case StreetRegion:
 	case PlatformL4:
@@ -351,7 +351,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Street = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
@@ -361,7 +361,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Town = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
@@ -371,7 +371,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 			riv.CurDivision.Village = region
 		}
 		if riv.CurDivision.District == nil {
-			riv.CurDivision.District = riv.Persister.GetRegion(region.ParentID)
+			riv.CurDivision.District = riv.persister.GetRegion(region.ParentID)
 		}
 		if needUpdateCityAndProvince {
 			riv.updateCityAndProvince(riv.CurDivision.District)
@@ -384,9 +384,9 @@ func (riv *RegionInterpreterVisitor) updateCityAndProvince(distinct *Region) {
 		return
 	}
 	if riv.CurDivision.City == nil {
-		riv.CurDivision.City = riv.Persister.GetRegion(distinct.ParentID)
+		riv.CurDivision.City = riv.persister.GetRegion(distinct.ParentID)
 		if riv.CurDivision.Province == nil {
-			riv.CurDivision.Province = riv.Persister.GetRegion(riv.CurDivision.City.ParentID)
+			riv.CurDivision.Province = riv.persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
 	}
 }
@@ -527,12 +527,20 @@ func (riv *RegionInterpreterVisitor) Reset() {
 	riv.DeepMostPos = -1
 	riv.fullMatchCount = 0
 	riv.deepMostFullMatchCount = 0
+
+	riv.DeepMostDivision.RoadText = ""
+	riv.DeepMostDivision.RoadNum = ""
+	riv.DeepMostDivision.BuildingNum = ""
 	riv.DeepMostDivision.Province = nil
 	riv.DeepMostDivision.City = nil
 	riv.DeepMostDivision.District = nil
 	riv.DeepMostDivision.Street = nil
 	riv.DeepMostDivision.Town = nil
 	riv.DeepMostDivision.Village = nil
+
+	riv.DeepMostDivision.RoadText = ""
+	riv.DeepMostDivision.RoadNum = ""
+	riv.DeepMostDivision.BuildingNum = ""
 	riv.CurDivision.Province = nil
 	riv.CurDivision.City = nil
 	riv.CurDivision.District = nil

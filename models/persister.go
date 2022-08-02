@@ -1,10 +1,9 @@
-package core
+package models
 
 import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
-	. "github.com/xiiv13/address_match_recommend/models"
 	"io"
 	"os"
 )
