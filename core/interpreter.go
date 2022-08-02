@@ -187,9 +187,7 @@ func (ai *AddressInterpreter) Interpret(entity *Address) {
 	// 提取道路信息
 	ai.extractRoad(entity)
 
-	// TODO
-
-	// ai.extractTownVillage(entity)
+	// ai.extractTownVillage(entity) TODO
 
 	entity.AddressText = regexp.MustCompile(`[\dA-Za-z\\#]+(单元|楼|室|层|米|户|\\#)`).ReplaceAllString(entity.AddressText, "")
 	entity.AddressText = regexp.MustCompile(`[一二三四五六七八九十]+(单元|楼|室|层|米|户)`).ReplaceAllString(entity.AddressText, "")
@@ -324,7 +322,7 @@ func (ai *AddressInterpreter) removeSpecialChars(entity *Address) {
 	// 删除特殊字符
 	text := utils.Remove([]rune(entity.AddressText), specialChars1, "")
 
-	// 删除连续出现5个以上的数字 TODO: 可能会出现, 这个暂做这个处理
+	// 删除连续出现5个以上的数字 TODO: 可能会出现, 暂做处理
 	text = utils.RemoveRepeatNum([]rune(text), 6)
 	entity.AddressText = text
 
@@ -381,8 +379,6 @@ func (ai *AddressInterpreter) extractRegion(entity *Address) {
 	entity.Town = ai.visitor.GetDevision().Town
 	entity.Village = ai.visitor.GetDevision().Village
 	entity.AddressText = string([]rune(entity.AddressText)[ai.visitor.EndPosition()+1:])
-	//entity.AddressText = entity.AddressText[ai.visitor.EndPosition()+1:]
-
 }
 
 // 规整省市区街道等匹配的结果
@@ -390,10 +386,9 @@ func (ai *AddressInterpreter) removeRedundancy(entity *Address) {
 	if len(entity.AddressText) == 0 || entity.Province == nil || entity.City == nil {
 		return
 	}
-	// 采用后序数组方式匹配省市区
-	endIndex := len(entity.AddressText) - 2
-	var i int
-	for i < endIndex {
+
+	endIndex := len(entity.AddressText) - 2 // 采用后序数组方式匹配省市区
+	for i := 0; i < endIndex; {
 		ai.visitor.Reset()
 		ai.indexBuilder.DeepMostPosQuery([]rune(entity.AddressText), i, ai.visitor)
 		// 没有匹配上，或者匹配上的行政区域个数少于2个认当做无效匹配
@@ -402,40 +397,46 @@ func (ai *AddressInterpreter) removeRedundancy(entity *Address) {
 			continue
 		}
 		// 匹配上的省份、地级市不正确
-		if entity.Province != ai.visitor.GetDevision().Province || entity.City != ai.visitor.GetDevision().City {
+		if !entity.Province.Equal(ai.visitor.GetDevision().Province) ||
+			!entity.City.Equal(ai.visitor.GetDevision().City) {
 			i++
 			continue
 		}
 
-		// TODO forkey_id
-
-		devision := ai.visitor.GetDevision() // 正确匹配
+		devision := ai.visitor.GetDevision()
 		// 修复 区 信息
-		if entity.District == nil && devision.District != nil && devision.District.ParentID == entity.City.ID {
+		if entity.District == nil && devision.District != nil &&
+			devision.District.ParentID == entity.City.ID {
 			entity.District = devision.District
+			entity.DistrictId = devision.DistrictId
 		}
 		// 修复 街道 信息
 		if entity.District != nil && entity.Street == nil && devision.Street != nil &&
 			devision.Street.ParentID == entity.District.ID {
 			entity.Street = devision.Street
+			entity.StreetId = devision.StreetId
 		}
 		// 修复 乡镇 信息
 		if entity.District != nil && entity.Town == nil && devision.Town != nil &&
 			devision.Town.ParentID == entity.District.ID {
 			entity.Town = devision.Town
-		} else if entity.District != nil && entity.Town != nil && entity.Town.Equal(entity.Street) &&
+			entity.TownId = devision.TownId
+		} else if entity.District != nil && entity.Town != nil &&
+			entity.Town.Equal(entity.Street) &&
 			devision.Town != nil && !devision.Town.Equal(devision.Street) &&
 			devision.Town.ParentID == entity.District.ID {
 			entity.Town = devision.Town
+			entity.TownId = devision.TownId
 		}
 		if entity.District != nil && entity.Village == nil && devision.Village != nil &&
 			devision.Village.ParentID == entity.District.ID {
 			entity.Village = devision.Village
+			entity.VillageId = devision.VillageId
 		}
 
 		// 正确匹配上，删除
-		entity.AddressText = entity.AddressText[ai.visitor.EndPosition()+1:]
-		endIndex = len(entity.AddressText)
+		entity.AddressText = string([]rune(entity.AddressText)[ai.visitor.EndPosition()+1:])
+		endIndex = len([]rune(entity.AddressText))
 		i = 0
 	}
 }
