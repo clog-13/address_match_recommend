@@ -36,7 +36,6 @@ var (
 func TestExtraRoad(t *testing.T) {
 	interpreter := NewAddressInterpreter(models.NewAddressPersister())
 	arr := []string{
-		"山东青岛即墨市龙山镇官庄村即墨市龙山街道办事处管庄村",               // 镇宁路
 		"河北省石家庄市鹿泉市镇宁路贺庄回迁楼1号楼1单元602室",             // 镇宁路
 		"北京北京海淀区北京市海淀区万寿路翠微西里13号楼1403室",            // 万寿路
 		",海南海南省直辖市县定安县见龙大道财政局宿舍楼702",               // 见龙大道
@@ -46,7 +45,7 @@ func TestExtraRoad(t *testing.T) {
 	for _, v := range arr {
 		addr := &models.Address{AddressText: v}
 		interpreter.Interpret(addr)
-		fmt.Println(addr.RoadNum)
+		fmt.Println(addr.RoadText)
 	}
 
 }
