@@ -37,6 +37,7 @@ func main() {
 		}
 
 		importAddr := models.Address{}
+		importAddr.RawText = strings.TrimSpace(line)
 		importAddr.AddressText = strings.TrimSpace(line)
 		interpreter.Interpret(&importAddr)
 		addrs = append(addrs, importAddr)

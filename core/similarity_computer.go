@@ -56,13 +56,9 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 
 	// 从文件缓存或内存缓存获取所有文档(地址库)
 	allDocs := loadDocunentsFromCache(&queryAddr)
-	eqCnt := 0
 	for _, doc := range allDocs { // 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
-		if 1 == computeDocSimilarity(&query, doc, topN, explain) {
-			eqCnt++
-			if topN == eqCnt { // 提前返回
-				break
-			}
+		if computeDocSimilarity(&query, doc, topN, explain) >= float64(1) {
+			break
 		}
 	}
 
@@ -515,13 +511,13 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	qTextTermCount := 0                                    // 查询文档Text类型词条数量
 	dTextTermMatchCount, matchStart, matchEnd := 0, -1, -1 // 地址库文档匹配上的Text词条数量
 	for _, v := range query.QueryDoc.Terms {
-		if v.Types != TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+		if v.Types != TextTerm { // 仅针对Text类型词条计算 词条稠密度、词条匹配率
 			continue
 		}
 		qTextTermCount++
 		for i := 0; i < len(doc.Terms); i++ {
 			term := doc.Terms[i]
-			if term.Types != TextTerm { //仅针对Text类型词条计算 词条稠密度、词条匹配率
+			if term.Types != TextTerm { // 仅针对Text类型词条计算 词条稠密度、词条匹配率
 				continue
 			}
 			if term.Text == v.Text {

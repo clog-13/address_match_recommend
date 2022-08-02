@@ -13,7 +13,7 @@ func TestFindsimilarAddress(t *testing.T) {
 	//querys := FindsimilarAddress("山东省济南市章丘区山东省章丘区明水开发区环路海尔公司", 5, true)
 	querys := FindsimilarAddress("湖北武汉汉阳区汉阳经济技术开发区车城东路901号", 5, true)
 	for _, v := range querys.SimiDocs {
-		fmt.Println(models.NewAddressPersister().LoadAddr(v.Doc.Id).AddressText)
+		fmt.Println(models.NewAddressPersister().LoadAddr(v.Doc.Id).RawText)
 		//fmt.Println(v.Doc.Id)
 		//fmt.Println(v.MatchedTerms)
 	}

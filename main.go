@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/xiiv13/address_match_recommend/core"
+	"github.com/xiiv13/address_match_recommend/models"
 	"github.com/xiiv13/address_match_recommend/utils"
 )
 
@@ -10,23 +13,29 @@ const (
 )
 
 var (
-	bloom = utils.NewCountingBloomFilter(totalNumber, falseDetectRate)
+	persister = &models.AddressPersister{}
+	bloom     = utils.NewCountingBloomFilter(totalNumber, falseDetectRate)
 )
 
-//func main() {
-//	var queryAddr string
-//	fmt.Scanln("输入国家: ", &queryAddr)
-//
-//	result := query(queryAddr, 5)
-//}
-//
-//func query(text string, n int) []string {
-//	if bloom.BFTest([]byte(text)) { // 布隆过滤器判断存在
-//
-//	} else {
-//		result := core.FindsimilarAddress(text, n, true)
-//
-//		bloom.BFSet([]byte(result.QueryAddr.AddressText))
-//	}
-//
-//}
+func main() {
+	var queryAddr string
+	//fmt.Scanln("输入地址: ", &queryAddr)
+	queryAddr = "四川成都高新博士公馆"
+	result := query(queryAddr, 5)
+	fmt.Println(len(result.SimiDocs))
+	for _, v := range result.SimiDocs {
+		fmt.Println(persister.LoadAddr(v.Doc.Id).RawText)
+	}
+}
+
+func query(text string, n int) models.Query {
+	return core.FindsimilarAddress(text, n, true)
+
+	//if bloom.BFTest([]byte(text)) { // 布隆过滤器判断存在
+	//
+	//} else {
+	//	result := core.FindsimilarAddress(text, n, true)
+	//
+	//	bloom.BFSet([]byte(result.QueryAddr.AddressText))
+	//}
+}

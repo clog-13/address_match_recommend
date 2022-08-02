@@ -8,10 +8,11 @@ import (
 	"testing"
 )
 
-// TODO
+// 河南郑州金水区河南郑州市金水区天明路和索凌路交叉口天明国际公寓C座11层901室 TODO
 
 var (
 	addrs = []string{
+		"四川省成都高新博士公馆",
 		"湖北武汉汉阳区汉阳经济技术开发区车城东路901号",
 		//"()四{}川{aa}(bb)成（）都（cc）武[]侯[dd]区【】武【ee】侯<>大<ff>道〈〉铁〈gg〉佛「」段「hh」千盛百货对面200米金履三路288号绿地圣路易名邸[]",
 		//"抚顺顺城区将军桥【将军水泥厂住宅4-1-102】 (将军桥附近)",
@@ -34,22 +35,6 @@ var (
 	}
 )
 
-func TestExtraRoad(t *testing.T) {
-	interpreter := NewAddressInterpreter(models.NewAddressPersister())
-	arr := []string{
-		"河北省石家庄市鹿泉市镇宁路贺庄回迁楼1号楼1单元602室",             // 镇宁路
-		"北京北京海淀区北京市海淀区万寿路翠微西里13号楼1403室",            // 万寿路
-		",海南海南省直辖市县定安县见龙大道财政局宿舍楼702",               // 见龙大道
-		"河北石家庄长安区南村镇强镇街51号南村工商管理局",                 // 强镇街
-		"吉林长春绿园区长春汽车产业开发区（省级）（特殊乡镇）长沈路1000号力旺格林春天", // 长沈路
-	}
-	for _, v := range arr {
-		addr := &models.Address{AddressText: v}
-		interpreter.Interpret(addr)
-		fmt.Println(addr.RoadText)
-	}
-}
-
 func TestInterpret(t *testing.T) {
 	interpreter := NewAddressInterpreter(models.NewAddressPersister())
 	addr := &models.Address{}
@@ -57,6 +42,22 @@ func TestInterpret(t *testing.T) {
 		addr.AddressText = v
 		interpreter.Interpret(addr)
 		fmt.Println(addr, addr.Province.Name, addr.City.Name, addr.District.Name)
+	}
+}
+
+func TestExtraRoad(t *testing.T) {
+	interpreter := NewAddressInterpreter(models.NewAddressPersister())
+	arr := []string{
+		"河北省石家庄市鹿泉市镇宁路贺庄回迁楼1号楼1单元602室",                      // 镇宁路
+		"北京北京海淀区北京市海淀区万寿路翠微西里13号楼1403室",                     // 万寿路
+		",海南海南省直辖市县定安县见龙大道财政局宿舍楼702",                         // 见龙大道
+		"河北石家庄长安区南村镇强镇街51号南村工商管理局",                           // 强镇街
+		"吉林长春绿园区长春汽车产业开发区（省级）（特殊乡镇）长沈路1000号力旺格林春天", // 长沈路
+	}
+	for _, v := range arr {
+		addr := &models.Address{AddressText: v}
+		interpreter.Interpret(addr)
+		fmt.Println(addr.RoadText)
 	}
 }
 
