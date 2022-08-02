@@ -411,7 +411,7 @@ func loadDocunentsFromCache(address *Address) []Document {
 
 	docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
 	if docs == nil {
-		docs = loadDocuments(address)
+		docs = loadDocuments()
 		allDocsLen = len(docs)
 		if docs == nil {
 			docs = make([]Document, 0)
@@ -465,13 +465,12 @@ func loadDocunentsFromCache(address *Address) []Document {
 	return docs
 }
 
-func loadDocuments(addr *Address) []Document {
+func loadDocuments() []Document {
 	docs := make([]Document, 0)
 	for _, v := range new(AddressPersister).LoadAddrs() {
-
 		docs = append(docs, analyze(&v))
 	}
-
+	return docs
 }
 
 func loadDocumentsCache(addr *Address) []Document {
@@ -597,7 +596,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		dtfidf *= dboost * coord * density
 
 		if explain && topN > 1 && dterm != nil { // 计算相似度
-			mt := new(MatchedTerm)
+			mt := NewMatchedTerm(*dterm)
 			mt.Boost = dboost
 			mt.TfIdf = dtfidf
 			if dterm.Types == TextTerm {

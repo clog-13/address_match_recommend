@@ -7,7 +7,9 @@ type SimilarDocument struct {
 }
 
 func NewSimilarDocument(doc Document) *SimilarDocument {
-	return &SimilarDocument{Doc: doc}
+	return &SimilarDocument{
+		Doc: doc,
+	}
 }
 
 func (s *SimilarDocument) AddMatchedTerm(value *MatchedTerm) {

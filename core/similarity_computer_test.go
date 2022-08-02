@@ -10,6 +10,6 @@ func TestFindsimilarAddress(t *testing.T) {
 	fmt.Println(querys)
 	for _, v := range querys.SimiDocs {
 		fmt.Println(v.Similarity)
-		fmt.Println(v.Doc)
+		fmt.Println(v.MatchedTerms)
 	}
 }
