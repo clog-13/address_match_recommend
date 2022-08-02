@@ -372,12 +372,12 @@ func (ai *AddressInterpreter) extractRegion(entity *Address) {
 	// 开始匹配
 	ai.visitor.Reset()
 	ai.indexBuilder.DeepMostQuery(entity.AddressText, ai.visitor)
-	entity.Province = ai.visitor.GetDevision().Province
-	entity.City = ai.visitor.GetDevision().City
-	entity.District = ai.visitor.GetDevision().District
-	entity.Street = ai.visitor.GetDevision().Street
-	entity.Town = ai.visitor.GetDevision().Town
-	entity.Village = ai.visitor.GetDevision().Village
+	entity.Province = ai.visitor.DeepMostDivision.Province
+	entity.City = ai.visitor.DeepMostDivision.City
+	entity.District = ai.visitor.DeepMostDivision.District
+	entity.Street = ai.visitor.DeepMostDivision.Street
+	entity.Town = ai.visitor.DeepMostDivision.Town
+	entity.Village = ai.visitor.DeepMostDivision.Village
 	entity.AddressText = string([]rune(entity.AddressText)[ai.visitor.EndPosition()+1:])
 }
 
@@ -397,13 +397,13 @@ func (ai *AddressInterpreter) removeRedundancy(entity *Address) {
 			continue
 		}
 		// 匹配上的省份、地级市不正确
-		if !entity.Province.Equal(ai.visitor.GetDevision().Province) ||
-			!entity.City.Equal(ai.visitor.GetDevision().City) {
+		if !entity.Province.Equal(ai.visitor.DeepMostDivision.Province) ||
+			!entity.City.Equal(ai.visitor.DeepMostDivision.City) {
 			i++
 			continue
 		}
 
-		devision := ai.visitor.GetDevision()
+		devision := ai.visitor.DeepMostDivision
 		// 修复 区 信息
 		if entity.District == nil && devision.District != nil &&
 			devision.District.ParentID == entity.City.ID {

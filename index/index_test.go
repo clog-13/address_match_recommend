@@ -12,7 +12,12 @@ func TestQueryIndex(t *testing.T) {
 	builder := NewTermIndexBuilder(persister)
 	visitor := NewRegionInterpreterVisitor(persister)
 
-	text := "北京海淀区丹棱街18号创富大厦1106"
+	text := "四川省成都高新博士公馆"
+	builder.DeepMostQuery(text, visitor)
+	fmt.Println(visitor)
+
+	visitor.Reset()
+	text = "北京海淀区丹棱街18号创富大厦1106"
 	builder.DeepMostQuery(text, visitor)
 	fmt.Println(visitor)
 

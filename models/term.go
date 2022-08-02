@@ -17,14 +17,14 @@ const (
 
 // Term 词条
 type Term struct {
-	Id uint `gorm:"primaryKey;"`
+	Id uint
 
 	TermId uint
-	Text   string  `gorm:"type:text;comment:词条字段" json:"term_text"`
-	Types  int     `gorm:"type:SMALLINT;comment:词条类型" json:"term_types"`
-	Idf    float64 `gorm:"type:float;comment:IDF" json:"term_idf"`
+	Text   string
+	Types  int
+	Idf    float64
 
-	Ref *Term `gorm:"-"`
+	Ref *Term
 }
 
 func NewTerm(types int, text string) *Term {

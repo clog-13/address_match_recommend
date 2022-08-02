@@ -127,7 +127,7 @@ func (tib *TermIndexBuilder) deepFirstQueryRound(
 	}
 	if entry.Items != nil && len(entry.Items) > 0 {
 		if visitor.Visit(entry, text, pos) {
-			p := visitor.PositionAfterAcceptItem() // 给访问者一个调整当前指针的机会
+			p := visitor.CurrentPos // 一次调整当前指针的机会
 			if p+1 <= len(text)-1 {
 				tib.DeepMostPosQuery(text, p+1, visitor)
 			}

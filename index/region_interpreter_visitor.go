@@ -322,15 +322,12 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 		return
 	}
 
-	// 非严格模式 || 只有一个父项
-	needUpdateCityAndProvince := len(entry.Items) == 1
+	needUpdateCityAndProvince := len(entry.Items) == 1 // 只有一个父项
 	switch {
-	case region.Types == ProvinceRegion:
-	case region.Types == ProvinceLevelCity1:
+	case region.Types == ProvinceRegion || region.Types == ProvinceLevelCity1:
 		riv.CurDivision.Province = region
 		riv.CurDivision.City = nil
-	case region.Types == CityRegion:
-	case region.Types == ProvinceLevelCity2:
+	case region.Types == CityRegion || region.Types == ProvinceLevelCity2:
 		riv.CurDivision.City = region
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = riv.persister.GetRegion(region.ParentID)
@@ -348,8 +345,7 @@ func (riv *RegionInterpreterVisitor) updateCurrentDivisionState(
 		if riv.CurDivision.Province == nil {
 			riv.CurDivision.Province = riv.persister.GetRegion(riv.CurDivision.City.ParentID)
 		}
-	case region.Types == StreetRegion:
-	case region.Types == PlatformL4:
+	case region.Types == StreetRegion || region.Types == PlatformL4:
 		if riv.CurDivision.Street == nil {
 			riv.CurDivision.Street = region
 		}
@@ -504,11 +500,6 @@ func (riv *RegionInterpreterVisitor) HasResult() bool {
 	return riv.DeepMostPos > 0 && riv.DeepMostDivision.District != nil
 }
 
-// GetDevision 获取访问后的对象
-func (riv *RegionInterpreterVisitor) GetDevision() Address {
-	return riv.DeepMostDivision
-}
-
 func (riv *RegionInterpreterVisitor) MatchCount() int {
 	return riv.DeepMostLevel
 }
@@ -531,23 +522,6 @@ func (riv *RegionInterpreterVisitor) Reset() {
 	riv.fullMatchCount = 0
 	riv.deepMostFullMatchCount = 0
 
-	riv.DeepMostDivision.RoadText = ""
-	riv.DeepMostDivision.RoadNum = ""
-	riv.DeepMostDivision.BuildingNum = ""
-	riv.DeepMostDivision.Province = nil
-	riv.DeepMostDivision.City = nil
-	riv.DeepMostDivision.District = nil
-	riv.DeepMostDivision.Street = nil
-	riv.DeepMostDivision.Town = nil
-	riv.DeepMostDivision.Village = nil
-
-	riv.CurDivision.RoadText = ""
-	riv.CurDivision.RoadNum = ""
-	riv.CurDivision.BuildingNum = ""
-	riv.CurDivision.Province = nil
-	riv.CurDivision.City = nil
-	riv.CurDivision.District = nil
-	riv.CurDivision.Street = nil
-	riv.CurDivision.Town = nil
-	riv.CurDivision.Village = nil
+	riv.DeepMostDivision = Address{}
+	riv.CurDivision = Address{}
 }

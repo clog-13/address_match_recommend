@@ -1,20 +1,20 @@
 package models
 
 type Document struct {
-	Id uint `gorm:"primaryKey;"`
+	Id uint
 
 	// 文档所有词条, 按照文档顺序, 未去重
-	Terms    []*Term          `gorm:"-"`
-	TermsMap map[string]*Term `gorm:"-"`
+	Terms    []*Term
+	TermsMap map[string]*Term
 
 	TownId       uint
-	Town         *Term `gorm:"foreignKey:term_id;references:town_id"` // 乡镇相关的词条信息
+	Town         *Term // 乡镇相关的词条信息
 	VillageId    uint
-	Village      *Term `gorm:"foreignKey:term_id;references:village_id"`
+	Village      *Term
 	RoadId       uint
-	Road         *Term `gorm:"foreignKey:term_id;references:road_id"` // 道路信息
+	Road         *Term // 道路信息
 	RoadNumId    uint
-	RoadNum      *Term `gorm:"foreignKey:term_id;references:road_num_id"`
+	RoadNum      *Term
 	RoadNumValue int
 }
 
