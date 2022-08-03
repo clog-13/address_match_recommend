@@ -21,9 +21,9 @@ const (
 
 // Region 行政区域实体
 type Region struct {
-	ID uint `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
+	ID int `gorm:"primaryKey;comment:行政区域ID" json:"ID"`
 
-	ParentID uint   `gorm:"type:uint;" json:"region_parent_id"`
+	ParentID int    `gorm:"type:uint;" json:"region_parent_id"`
 	Name     string `gorm:"type:string;" json:"region_name"`
 	Alias    string `gorm:"type:string;" json:"region_alias"`
 	Types    int    `gorm:"type:SMALLINT;" json:"region_types"`

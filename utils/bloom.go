@@ -21,7 +21,7 @@ func NewCountingBloomFilter(totalNumber int, falseDetectRate float64) *CBF {
 
 func (b *CBF) estimateMK(number int, possibility float64) {
 	// 根据概率公式计算合适的 模长 和 hash函数个数
-	//mod = -1 * (n * lnP)/(ln2)^2
+	// mod = -1 * (n * lnP)/(ln2)^2
 	nFloat := float64(number)
 	ln2 := math.Log(2)
 	b.mod = int(-1 * (nFloat * math.Log(possibility)) / math.Pow(ln2, 2))

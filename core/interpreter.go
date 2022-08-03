@@ -38,7 +38,7 @@ var (
 	bracketPattern = regexp.MustCompile(`(?P<bracket>([(（{<〈\[【「][^)）}>〉\]】」]*[)）}>〉\]】」]))`)
 
 	// 道路信息
-	reROAD = regexp.MustCompile("^(?P<road>([\u4e00-\u9fa5]{2,6}(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|#院|#))?")
+	reROAD = regexp.MustCompile("^(?P<road>([\u4e00-\u9fa5]*(路|街坊|街|道|大街|大道)))(?P<ex>[甲乙丙丁])?(?P<roadnum>[0-9０１２３４５６７８９一二三四五六七八九十]+(号院|号楼|号大院|号|號|巷|弄|院|区|条|#院|#))?")
 
 	// 道路中未匹配到的building信息
 	reRoadBuilding = regexp.MustCompile(`[\dA-Z一二三四五六七八九十]+(栋|橦|幢|座|号楼|号|\\#楼?)`)
@@ -459,7 +459,7 @@ func (ai *AddressInterpreter) extractRoad(entity *Address) {
 		ex := matches[reROAD.SubexpIndex("ex")]
 		roadNum := ex + matches[reROAD.SubexpIndex("roadnum")]
 
-		//leftText := string([]rune(entity.AddressText[len([]rune(road))+len([]rune(roadNum)):]))
+		//leftText := entity.AddressText[len(road)+len(roadNum):]
 		leftText := entity.AddressText[len(road)+len(roadNum):]
 		if strings.HasPrefix(leftText, "小区") {
 			return

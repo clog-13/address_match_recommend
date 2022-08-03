@@ -9,7 +9,7 @@ type Address struct {
 	RoadNum     string `gorm:"type:text;" json:"road_num"`
 	BuildingNum string `gorm:"type:text;" json:"building_num"`
 
-	ProvinceId, CityId, DistrictId, StreetId, VillageId, TownId uint
+	ProvinceId, CityId, DistrictId, StreetId, VillageId, TownId int
 
 	Province *Region `gorm:"-"`
 	City     *Region `gorm:"-"`

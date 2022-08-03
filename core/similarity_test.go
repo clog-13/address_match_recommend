@@ -18,7 +18,7 @@ func TestFindsimilarAddress(t *testing.T) {
 		fmt.Println("地址存在")
 	} else {
 		for _, v := range querys.SimiDocs {
-			text := persister.LoadAddr(v.Doc.Id).RawText
+			text := persister.LoadAddr(v.Doc.ID).RawText
 			fmt.Println(text)
 			fmt.Println(v.Similarity)
 		}
@@ -35,7 +35,7 @@ func TestProvince(t *testing.T) {
 		fmt.Println("地址存在")
 	} else {
 		for _, v := range querys.SimiDocs {
-			text := persister.LoadAddr(v.Doc.Id).RawText
+			text := persister.LoadAddr(v.Doc.ID).RawText
 			fmt.Println(text)
 			fmt.Println(v.Similarity)
 		}
@@ -59,7 +59,7 @@ func TestInsert(t *testing.T) {
 		fmt.Println("地址存在")
 	} else {
 		for _, v := range querys.SimiDocs {
-			text := persister.LoadAddr(v.Doc.Id).RawText
+			text := persister.LoadAddr(v.Doc.ID).RawText
 			fmt.Println(text)
 			fmt.Println(v.Similarity)
 		}

@@ -6,7 +6,7 @@ type AddressPersister struct {
 	RegionTree Region
 
 	// 按区域ID缓存的全部区域对象。
-	RegionCache map[uint]Region
+	RegionCache map[int]Region
 
 	RegionLoaded bool
 }
@@ -28,7 +28,7 @@ func (ap *AddressPersister) RootRegion() Region {
 	return ap.RegionTree
 }
 
-func (ap *AddressPersister) GetRegion(id uint) *Region {
+func (ap *AddressPersister) GetRegion(id int) *Region {
 	if !ap.RegionLoaded {
 		ap.loadRegions()
 	}
@@ -42,7 +42,7 @@ func (ap *AddressPersister) CreateRegion(region Region) {
 	DB.Create(&region)
 }
 
-func (ap *AddressPersister) FindRegion(parentID uint, name string) Region {
+func (ap *AddressPersister) FindRegion(parentID int, name string) Region {
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region`
 	// where parent_id=#{pid} and `name`=#{name}
 	// order by id
@@ -59,7 +59,7 @@ func (ap *AddressPersister) loadRegions() {
 	// select `id`,`parent_id`,`name`,`alias`,`type`,`zip` from `bas_region` where id=1
 	DB.Where("id = ?", 1).First(&ap.RegionTree)
 
-	ap.RegionCache = make(map[uint]Region)
+	ap.RegionCache = make(map[int]Region)
 	ap.RegionCache[ap.RegionTree.ID] = ap.RegionTree
 	ap.loadRegionChildren(&ap.RegionTree)
 	ap.RegionLoaded = true
@@ -97,14 +97,14 @@ func (ap *AddressPersister) GetRootRegionChilden() []*Region {
 	return ap.RegionTree.Children
 }
 
-func (ap *AddressPersister) LoadAddrsPC(provinceId, cityId uint) []Address {
+func (ap *AddressPersister) LoadAddrsPC(provinceId, cityId int) []Address {
 	// select `id`,`province`,`city`,`district`,street,town,village,`text`,`road`,`road_num`,`building_num`,`hash`
 	// from `addr_address` where province=#{provinceId} and city=#{cityId} <if test="countyId&gt;0">and district=#{countyId}
 	var addrs []Address
 	DB.Where("province_id = ? AND city_id = ?", provinceId, cityId).Find(&addrs)
 	return addrs
 }
-func (ap *AddressPersister) LoadAddr(id uint) Address {
+func (ap *AddressPersister) LoadAddr(id int) Address {
 	// select `id`,`province`,`city`,`district`,street,town,village,`text`,`road`,`road_num`,`building_num`,`hash`
 	// from `addr_address` where province=#{provinceId} and city=#{cityId} <if test="countyId&gt;0">and district=#{countyId}
 	var addrs Address
@@ -112,7 +112,7 @@ func (ap *AddressPersister) LoadAddr(id uint) Address {
 	return addrs
 }
 
-func (ap *AddressPersister) LoadAddrsPCD(provinceId, cityId, countryId uint) []Address {
+func (ap *AddressPersister) LoadAddrsPCD(provinceId, cityId, countryId int) []Address {
 	// select `id`,`province`,`city`,`district`,street,town,village,`text`,`road`,`road_num`,`building_num`,`hash`
 	// from `addr_address` where province=#{provinceId} and city=#{cityId} <if test="countyId&gt;0">and district=#{countyId}
 	var addrs []Address

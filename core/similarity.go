@@ -108,19 +108,23 @@ func SortSimilarDocs(q *Query) {
 
 // 分词，设置词条权重
 func analyze(addr *Address) Document {
-	doc := NewDocument(uint(addr.Id))
-
-	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
-	tokens := make([]string, 0)
-	addr.AddressText = strings.ReplaceAll(addr.AddressText, "-", "")
-	if len(addr.AddressText) > 0 {
-		tokens = segmenter.Stop(segmenter.Cut(addr.AddressText))
-	}
+	doc := NewDocument(int(addr.Id))
 
 	// TODO
 
-	terms := make([]*Term, 0)
-	// 生成term
+	terms := make([]*Term, 0) // 生成term
+	if addr.Province != nil {
+		terms = append(terms, NewTerm(ProvinceTerm, addr.Province.Name))
+	}
+	if addr.City != nil {
+		terms = append(terms, NewTerm(CityTerm, addr.City.Name))
+	}
+	if addr.District != nil {
+		terms = append(terms, NewTerm(DistrictTerm, addr.District.Name))
+	}
+	if addr.Street != nil {
+		terms = append(terms, NewTerm(StreetTerm, addr.Street.Name))
+	}
 	if addr.Town != nil {
 		doc.Town = NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
@@ -147,6 +151,12 @@ func analyze(addr *Address) Document {
 
 	// TODO
 
+	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
+	tokens := make([]string, 0)
+	addr.AddressText = strings.ReplaceAll(addr.AddressText, "-", "")
+	if len(addr.AddressText) > 0 {
+		tokens = segmenter.Stop(segmenter.Cut(addr.AddressText))
+	}
 	// 地址文本分词后的token
 	for _, text := range tokens {
 		if len(text) == 0 {
@@ -159,13 +169,6 @@ func analyze(addr *Address) Document {
 		}
 		terms = append(terms, NewTerm(TextTerm, text))
 	}
-
-	terms = append(terms, NewTerm(ProvinceTerm, strconv.Itoa(int(addr.ProvinceId))))
-	terms = append(terms, NewTerm(CityTerm, strconv.Itoa(int(addr.CityId))))
-	terms = append(terms, NewTerm(DistrictTerm, strconv.Itoa(int(addr.DistrictId))))
-	terms = append(terms, NewTerm(StreetTerm, strconv.Itoa(int(addr.StreetId))))
-	terms = append(terms, NewTerm(TownTerm, strconv.Itoa(int(addr.TownId))))
-	terms = append(terms, NewTerm(VillageTerm, strconv.Itoa(int(addr.ProvinceId))))
 
 	idfs, ok := IdfCache[buildCacheKey(addr)]
 	if ok {
@@ -185,16 +188,6 @@ func analyze(addr *Address) Document {
 			} else {
 				v.Idf = 4.0
 			}
-			//idf := 0.0
-			//if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
-			//	idf = 2.0
-			//} else {
-			//	idf = math.Log(float64(len(docs) / (v + 1)))
-			//}
-			//if idf < 0.0 {
-			//	idf = 0.0
-			//}
-			//idfs[k] = idf
 		}
 	}
 
@@ -255,21 +248,18 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 	value := BoostM
 	types := termTypes
 	switch {
-	case types == ProvinceTerm:
-	case types == CityTerm:
-	case types == DistrictTerm:
+	case types == ProvinceTerm || types == CityTerm || types == DistrictTerm:
 		value = BoostXl // 省市区、道路出现频次高，IDF值较低，但重要程度最高，因此给予比较高的加权权重
 	case types == StreetTerm:
 		value = BoostXs //一般人对于城市街道范围概念不强，在地址中随意选择街道的可能性较高，因此降权处理
 	case types == TextTerm:
 		value = BoostM
-	case types == TownTerm:
-	case types == VillageTerm:
+	case types == TownTerm || types == VillageTerm:
 		value = BoostXs
 		if TownTerm == types { //乡镇
-			//查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
-			//  乡镇相同：查询文档和地址库文档都加权BOOST_L，提高相似度
-			//  乡镇不同：只有查询文档的词条加权BOOST_L，地址库文档的词条因无法匹配不会进入该函数。结果是拉开相似度的差异
+			// 查询文档和地址库文档都有乡镇，为乡镇加权。注意：存在乡镇相同、不同两种情况。
+			// 乡镇相同：查询文档和地址库文档都加权BOOST_L，提高相似度
+			// 乡镇不同：只有查询文档的词条加权BOOST_L，地址库文档的词条因无法匹配不会进入该函数。结果是拉开相似度的差异
 			if qdoc.Town != nil && ddoc.Town != nil {
 				value = BoostL
 			}
@@ -277,13 +267,13 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 			//查询文档和地址库文档都有乡镇且乡镇相同，且查询文档和地址库文档都有村庄时，为村庄加权
 			//与上述乡镇类似，存在村庄相同和不同两种情况
 			if qdoc.Village != nil && ddoc.Village != nil && qdoc.Town != nil {
-				if qdoc.Town == ddoc.Town {
+				if qdoc.Town == ddoc.Town { // 镇相同
 					if qdoc.Village == ddoc.Village {
 						value = BoostXl
 					} else {
 						value = BoostL
 					}
-				} else if ddoc.Town != nil {
+				} else if ddoc.Town != nil { // 镇不同
 					if !forDoc {
 						value = BoostL
 					} else {
@@ -292,8 +282,7 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 				}
 			}
 		}
-	case types == RoadTerm:
-	case types == RoadNumTerm:
+	case types == RoadTerm || types == RoadNumTerm || types == BuildTerm:
 		if qdoc.Town == nil || qdoc.Village == nil { // 有乡镇有村庄，不再考虑道路、门牌号的加权
 			if RoadTerm == types { //道路
 				if qdoc.Road != nil && ddoc.Road != nil {
@@ -459,7 +448,7 @@ func loadDocunentsFrom(address *Address) []Document {
 					}
 					idfs[k] = idf
 				}
-				IdfCache[cacheKey] = idfs
+				//IdfCache[cacheKey] = idfs
 			}
 		}
 
@@ -588,13 +577,13 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 
 	// 计算TF-IDF和相似度的中间值
 	var sumQD, sumQQ, sumDD, qtfidf, dtfidf float64 = 0, 0, 0, 0, 0
-	var dboost, qboost float64 = 0, 0
-	for _, v := range query.QueryDoc.Terms {
-		qboost = getBoostValue(false, query.QueryDoc, doc, v.Types)
-		qtfidf = v.Idf * qboost
-		dterm = doc.GetTerm(v.Text)
-		if dterm == nil && RoadNumTerm == v.Types {
-			if doc.RoadNum != nil && doc.Road != nil && doc.Road.Equals(v.Ref) {
+	var dboost, qboost float64 = 0, 0 // 加权值
+	for _, qterm := range query.QueryDoc.Terms {
+		qboost = getBoostValue(false, query.QueryDoc, doc, qterm.Types)
+		qtfidf = qterm.Idf * qboost
+		dterm = doc.GetTerm(qterm.Text)
+		if dterm == nil && RoadNumTerm == qterm.Types {
+			if doc.RoadNum != nil && doc.Road != nil && doc.Road.Equals(qterm.Ref) {
 				dterm = doc.RoadNum
 			}
 		}
@@ -611,7 +600,7 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		if dterm != nil {
 			dtfidf = dterm.Idf
 		} else {
-			dtfidf = v.Idf
+			dtfidf = qterm.Idf
 		}
 		dtfidf *= dboost * coord * density
 
@@ -647,18 +636,6 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		query.AddSimiDocs(doc, s)
 	}
 	return s
-}
-
-func buildCacheKey(address *Address) string {
-	if address == nil || address.Province == nil || address.City == nil {
-		return ""
-	}
-
-	res := strconv.Itoa(int(address.Province.ID)) + "-" + strconv.Itoa(int(address.City.ID))
-	if address.City.Children != nil {
-		res += "-" + strconv.Itoa(int(address.District.ID))
-	}
-	return res
 }
 
 func ImportAddr(text string) {
@@ -752,4 +729,16 @@ func StoreToDocunents(address *Address, doc Document) []Document {
 	}
 
 	return docs
+}
+
+func buildCacheKey(address *Address) string {
+	if address == nil || address.Province == nil || address.City == nil {
+		return ""
+	}
+
+	res := strconv.Itoa(address.Province.ID) + "-" + strconv.Itoa(address.City.ID)
+	if address.City.Children != nil {
+		res += "-" + strconv.Itoa(int(address.District.ID))
+	}
+	return res
 }
