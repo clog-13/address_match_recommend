@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	filepath := "C:\\Users\\Administrator\\GolandProjects\\address_match_recommend\\resource\\test_addresses.txt"
+	filepath := "C:\\Users\\zx\\GolandProjects\\address_match_recommend\\resource\\test_addresses.txt"
 	file, err := os.OpenFile(filepath, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println("Open file error!", err)
@@ -63,7 +63,6 @@ func main() {
 		if v.Village != nil {
 			v.VillageId = v.Village.ID
 		}
-		fmt.Println(v)
 		models.DB.Create(&v)
 	}
 }

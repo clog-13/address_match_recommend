@@ -4,38 +4,32 @@ import (
 	"fmt"
 	"github.com/xiiv13/address_match_recommend/core"
 	"github.com/xiiv13/address_match_recommend/models"
-	"github.com/xiiv13/address_match_recommend/utils"
-)
-
-const (
-	totalNumber     = 10000000
-	falseDetectRate = 0.000001
-)
-
-var (
-	persister = &models.AddressPersister{}
-	bloom     = utils.NewCountingBloomFilter(totalNumber, falseDetectRate)
 )
 
 func main() {
-	var queryAddr string
-	//fmt.Scanln("输入地址: ", &queryAddr)
-	queryAddr = "四川成都高新博士公馆"
-	result := query(queryAddr, 5)
-	fmt.Println(len(result.SimiDocs))
-	for _, v := range result.SimiDocs {
-		fmt.Println(persister.LoadAddr(v.Doc.Id).RawText)
+	persister := models.NewAddressPersister()
+	arr := []string{
+		//"北京海淀区丹棱街18号创富大厦1106",
+		"江苏连云港赣榆区江苏省赣榆县青口镇黄海路56号电影公司宿舍楼北楼1-901",
+		"江津连云港赣榆区江苏省赣榆县青口镇黄海路56号科技有限公司宿舍楼北楼",
+		"山东省济南市章丘区山东省章丘区明水开发区环路海尔公司",
+		"湖北武汉汉阳区汉阳经济技术开发区车城东路901号",
+		"湖西武汉汉阳区东荆河路海尔配套园武汉钣金有限公司",
+		"上海武汉汉阳区东荆河路海尔配套园武汉钣金有限公司",
+		"山东潍坊潍城区潍坊市潍城区望留西安村浮烟山风景区东侧",
 	}
-}
-
-func query(text string, n int) models.Query {
-	return core.FindsimilarAddress(text, n, true)
-
-	//if bloom.BFTest([]byte(text)) { // 布隆过滤器判断存在
-	//
-	//} else {
-	//	result := core.FindsimilarAddress(text, n, true)
-	//
-	//	bloom.BFSet([]byte(result.QueryAddr.AddressText))
-	//}
+	for _, a := range arr {
+		fmt.Println("------------------------------------------")
+		fmt.Println(a)
+		querys, ok := core.FindsimilarAddress(a, 5, true)
+		if ok {
+			fmt.Println("地址存在")
+		} else {
+			for i, v := range querys.SimiDocs {
+				text := persister.LoadAddr(v.Doc.Id).RawText
+				fmt.Printf("%d.%s\n", i+1, text)
+				fmt.Printf("  %g\n", v.Similarity)
+			}
+		}
+	}
 }

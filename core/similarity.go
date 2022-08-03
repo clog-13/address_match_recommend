@@ -24,11 +24,19 @@ var (
 	interpreter = NewAddressInterpreter(persister)
 	segmenter   = segment.NewGseSegment()
 
-	allDocsLen   = 0
-	msi          = map[string]int{}
 	VectorsCache = make(map[string][]Document)
 	IdfCache     = make(map[string]map[string]float64)
+
+	bloom = utils.NewCountingBloomFilter(1000000, 0.00001)
 )
+
+func init() { // 初始化布隆过滤器
+	var docs []Address
+	DB.Find(&docs)
+	for _, v := range docs {
+		bloom.BFSet([]byte(v.RawText))
+	}
+}
 
 /**
 TC: 词数 Term Count, 某个词在文档中出现的次数
@@ -39,9 +47,18 @@ TF-IDF: 词条的特征值，TF-IDF = TF * IDF。
 
 // FindsimilarAddress 搜索相似地址
 // addressText: 详细地址文本，开头部分必须包含省、市、区
-func FindsimilarAddress(addressText string, topN int, explain bool) Query {
+func FindsimilarAddress(addressText string, topN int, explain bool) (Query, bool) {
 	if len(addressText) == 0 || len(strings.TrimSpace(addressText)) <= 0 {
-		return Query{}
+		return Query{}, false
+	}
+
+	// 布隆过滤器先判断
+	if bloom.BFTest([]byte(addressText)) {
+		addr := Address{}
+		err := DB.Where("raw_text = ?", addressText).Find(&addr).Error
+		if err == nil { // 数据存在，查询成功
+			return Query{}, true
+		}
 	}
 
 	queryAddr := Address{AddressText: addressText}
@@ -55,7 +72,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 	}
 
 	// 从文件缓存或内存缓存获取所有文档(地址库)
-	allDocs := loadDocunentsFromCache(&queryAddr)
+	allDocs := loadDocunentsFrom(&queryAddr)
 	for _, doc := range allDocs { // 对应地址库中每条地址计算相似度，并保留相似度最高的topN条地址
 		if computeDocSimilarity(&query, doc, topN, explain) >= float64(1) {
 			break
@@ -65,7 +82,7 @@ func FindsimilarAddress(addressText string, topN int, explain bool) Query {
 	if topN > 1 {
 		SortSimilarDocs(&query) // 按相似度从高到低排序
 	}
-	return query
+	return query, false
 }
 
 // SortSimilarDocs 将相似文档按相似度从高到低排序。
@@ -142,6 +159,13 @@ func analyze(addr *Address) Document {
 		}
 		terms = append(terms, NewTerm(TextTerm, text))
 	}
+
+	terms = append(terms, NewTerm(ProvinceTerm, strconv.Itoa(int(addr.ProvinceId))))
+	terms = append(terms, NewTerm(CityTerm, strconv.Itoa(int(addr.CityId))))
+	terms = append(terms, NewTerm(DistrictTerm, strconv.Itoa(int(addr.DistrictId))))
+	terms = append(terms, NewTerm(StreetTerm, strconv.Itoa(int(addr.StreetId))))
+	terms = append(terms, NewTerm(TownTerm, strconv.Itoa(int(addr.TownId))))
+	terms = append(terms, NewTerm(VillageTerm, strconv.Itoa(int(addr.ProvinceId))))
 
 	idfs, ok := IdfCache[buildCacheKey(addr)]
 	if ok {
@@ -399,21 +423,20 @@ func translateRoadNum(text string) int {
 	return 0
 }
 
-func loadDocunentsFromCache(address *Address) []Document {
+func loadDocunentsFrom(address *Address) []Document {
 	cacheKey := buildCacheKey(address)
-	if len(cacheKey) == 0 {
-		return nil
-	}
-	docs := make([]Document, 0)
+	//if len(cacheKey) == 0 {
+	//	return nil
+	//}
+	//docs := make([]Document, 0)
 
-	docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
-	if docs == nil {
+	docs, ok := VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
+	if !ok {
 		docs = loadDocuments()
-		allDocsLen = len(docs)
-		if docs == nil {
-			docs = make([]Document, 0)
-			VectorsCache[cacheKey] = docs
-		}
+		//if docs == nil {
+		//	docs = make([]Document, 0)
+		//	VectorsCache[cacheKey] = docs
+		//}
 
 		// 为所有词条计算IDF并缓存
 		idfs := IdfCache[cacheKey]
@@ -609,6 +632,9 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 		sumQD += qtfidf * dtfidf
 		sumDD += dtfidf * dtfidf
 	}
+
+	// TODO
+
 	if sumDD == 0 || sumQQ == 0 {
 		return 0
 	}
@@ -633,4 +659,97 @@ func buildCacheKey(address *Address) string {
 		res += "-" + strconv.Itoa(int(address.District.ID))
 	}
 	return res
+}
+
+func ImportAddr(text string) {
+	addr := Address{}
+	addr.RawText = strings.TrimSpace(text)
+	addr.AddressText = strings.TrimSpace(text)
+	// 数据库
+	interpreter.Interpret(&addr)
+	if addr.Province != nil {
+		addr.ProvinceId = addr.Province.ID
+	}
+	if addr.City != nil {
+		addr.CityId = addr.City.ID
+	}
+	if addr.District != nil {
+		addr.DistrictId = addr.District.ID
+	}
+	if addr.Street != nil {
+		addr.StreetId = addr.Street.ID
+	}
+	if addr.Town != nil {
+		addr.TownId = addr.Town.ID
+	}
+	if addr.Village != nil {
+		addr.VillageId = addr.Village.ID
+	}
+	DB.Create(&addr)
+	bloom.BFSet([]byte(addr.RawText))
+	// TODO
+
+	//doc := analyze(&addr)
+	//StoreToDocunents(&addr, doc)
+}
+
+func StoreToDocunents(address *Address, doc Document) []Document {
+	cacheKey := buildCacheKey(address)
+	if len(cacheKey) == 0 {
+		return nil
+	}
+	docs := make([]Document, 0)
+
+	docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
+	if docs == nil {
+		docs = make([]Document, 0)
+		VectorsCache[cacheKey] = docs
+	} else {
+		docs = append(docs, doc)
+	}
+
+	// 为所有词条计算IDF并缓存
+	idfs := IdfCache[cacheKey]
+	if idfs == nil {
+		// TODO
+		idfs = IdfCache[cacheKey]
+		if idfs == nil {
+			termReferences := statInverseDocRefers(docs)
+
+			idfs = make(map[string]float64, len(termReferences))
+			for k, v := range termReferences {
+				idf := 0.0
+				if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
+					idf = 2.0
+				} else {
+					idf = math.Log(float64(len(docs) / (v + 1)))
+				}
+				if idf < 0.0 {
+					idf = 0.0
+				}
+				idfs[k] = idf
+			}
+			//IdfCache[cacheKey] = idfs
+		}
+	}
+
+	for _, doc := range docs {
+		if doc.Town != nil {
+			doc.Town.Idf = idfs[generateIDFCacheEntryKey(doc.Town)]
+		}
+		if doc.Village != nil {
+			doc.Village.Idf = idfs[generateIDFCacheEntryKey(doc.Village)]
+		}
+		if doc.Road != nil {
+			doc.Road.Idf = idfs[generateIDFCacheEntryKey(doc.Road)]
+		}
+		if doc.RoadNum != nil {
+			doc.RoadNum.Idf = idfs[generateIDFCacheEntryKey(doc.RoadNum)]
+		}
+		for _, term := range doc.Terms {
+			term.Idf = idfs[generateIDFCacheEntryKey(term)]
+		}
+	}
+
+	return docs
 }

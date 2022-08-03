@@ -374,8 +374,18 @@ func (ai *AddressInterpreter) extractRegion(entity *Address) {
 	entity.City = ai.visitor.DeepMostDivision.City
 	entity.District = ai.visitor.DeepMostDivision.District
 	entity.Street = ai.visitor.DeepMostDivision.Street
-	entity.Town = ai.visitor.DeepMostDivision.Town
-	entity.Village = ai.visitor.DeepMostDivision.Village
+	if ai.visitor.DeepMostDivision.Province != nil {
+		entity.ProvinceId = ai.visitor.DeepMostDivision.Province.ID
+	}
+	if ai.visitor.DeepMostDivision.City != nil {
+		entity.CityId = ai.visitor.DeepMostDivision.City.ID
+	}
+	if ai.visitor.DeepMostDivision.District != nil {
+		entity.DistrictId = ai.visitor.DeepMostDivision.District.ID
+	}
+	if ai.visitor.DeepMostDivision.Street != nil {
+		entity.StreetId = ai.visitor.DeepMostDivision.Street.ID
+	}
 	entity.AddressText = string([]rune(entity.AddressText)[ai.visitor.EndPosition()+1:])
 }
 
