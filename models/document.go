@@ -6,6 +6,11 @@ type Document struct {
 	Terms    []*Term
 	TermsMap map[string]*Term
 
+	Province *Term
+	City     *Term
+	District *Term
+
+	Street       *Term
 	Town         *Term // 乡镇相关的词条信息
 	Village      *Term
 	Road         *Term // 道路信息

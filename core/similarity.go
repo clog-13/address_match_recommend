@@ -110,29 +110,67 @@ func SortSimilarDocs(q *Query) {
 func analyze(addr *Address) Document {
 	doc := NewDocument(int(addr.Id))
 
-	// TODO
-
 	terms := make([]*Term, 0) // 生成term
 	if addr.Province != nil {
-		terms = append(terms, NewTerm(ProvinceTerm, addr.Province.Name))
+		doc.Province = NewTerm(ProvinceTerm, addr.Province.Name)
+		terms = append(terms, doc.Province)
+	} else if addr.ProvinceId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.ProvinceId).Find(&re)
+		doc.Province = NewTerm(ProvinceTerm, re.Name)
+		terms = append(terms, doc.Province)
 	}
+
 	if addr.City != nil {
-		terms = append(terms, NewTerm(CityTerm, addr.City.Name))
+		doc.City = NewTerm(CityTerm, addr.City.Name)
+		terms = append(terms, doc.City)
+	} else if addr.CityId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.CityId).Find(&re)
+		doc.City = NewTerm(CityTerm, re.Name)
+		terms = append(terms, doc.City)
 	}
+
 	if addr.District != nil {
-		terms = append(terms, NewTerm(DistrictTerm, addr.District.Name))
+		doc.District = NewTerm(DistrictTerm, addr.District.Name)
+		terms = append(terms, doc.District)
+	} else if addr.DistrictId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.DistrictId).Find(&re)
+		doc.District = NewTerm(DistrictTerm, re.Name)
+		terms = append(terms, doc.District)
 	}
+
 	if addr.Street != nil {
-		terms = append(terms, NewTerm(StreetTerm, addr.Street.Name))
+		doc.Street = NewTerm(StreetTerm, addr.Street.Name)
+		terms = append(terms, doc.Street)
+	} else if addr.StreetId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.StreetId).Find(&re)
+		doc.Street = NewTerm(StreetTerm, re.Name)
+		terms = append(terms, doc.Street)
 	}
+
 	if addr.Town != nil {
 		doc.Town = NewTerm(TownTerm, addr.Town.Name)
 		terms = append(terms, doc.Town)
+	} else if addr.TownId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.TownId).Find(&re)
+		doc.Town = NewTerm(TownTerm, re.Name)
+		terms = append(terms, doc.Town)
 	}
+
 	if addr.Village != nil {
 		doc.Village = NewTerm(VillageTerm, addr.Village.Name)
 		terms = append(terms, doc.Village)
+	} else if addr.VillageId != 0 {
+		var re Region
+		DB.Where("id = ?", addr.VillageId).Find(&re)
+		doc.Village = NewTerm(CityTerm, re.Name)
+		terms = append(terms, doc.Village)
 	}
+
 	if len(addr.RoadText) > 0 {
 		doc.Road = NewTerm(RoadTerm, addr.RoadText)
 		terms = append(terms, doc.Road)
@@ -145,13 +183,9 @@ func analyze(addr *Address) Document {
 		terms = append(terms, doc.RoadNum)
 	}
 
-	// TODO
+	//translateBuilding() TODO
 
-	//translateBuilding()
-
-	// TODO
-
-	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
+	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词 TODO
 	tokens := make([]string, 0)
 	addr.AddressText = strings.ReplaceAll(addr.AddressText, "-", "")
 	if len(addr.AddressText) > 0 {
@@ -221,28 +255,12 @@ func statInverseDocRefers(docs []Document) map[string]int {
 	return idrc
 }
 
-func generateIDFCacheEntryKey(term *Term) string {
-	key := term.Text
-	if RoadNumTerm == term.Types {
-		num := translateRoadNum(key)
-		if term.Ref == nil {
-			key = ""
-		} else {
-			key = term.Ref.Text
-		}
-		key += "-" + strconv.Itoa(num)
-	}
-	return key
-}
-
 /**
  * 计算词条加权权重boost值。
  * @param forDoc true:为地址库文档词条计算boost；false:为查询文档词条计算boost。
  * @param qdoc 查询文档。
- * @param qterm 查询文档词条。
  * @param ddoc 地址库文档。
  * @param dterm 地址库文档词条。
- * @return
  */
 func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) float64 {
 	value := BoostM
@@ -264,8 +282,8 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 				value = BoostL
 			}
 		} else { //村庄
-			//查询文档和地址库文档都有乡镇且乡镇相同，且查询文档和地址库文档都有村庄时，为村庄加权
-			//与上述乡镇类似，存在村庄相同和不同两种情况
+			// 查询文档和地址库文档都有乡镇且乡镇相同，且查询文档和地址库文档都有村庄时，为村庄加权
+			// 与上述乡镇类似，存在村庄相同和不同两种情况
 			if qdoc.Village != nil && ddoc.Village != nil && qdoc.Town != nil {
 				if qdoc.Town == ddoc.Town { // 镇相同
 					if qdoc.Village == ddoc.Village {
@@ -304,112 +322,6 @@ func getBoostValue(forDoc bool, qdoc Document, ddoc Document, termTypes int) flo
 		}
 	}
 	return value
-}
-
-/**
- * 将道路门牌号中的数字提取出来
- * @param text 道路门牌号，例如40号院、甲一号院等
- * @return 返回门牌号数字
- */
-func translateRoadNum(text string) int {
-	if len(text) == 0 {
-		return 0
-	}
-	var sb string
-	for i := 0; i < len(text); i++ {
-		c := text[i]
-		if c >= '0' && c <= '9' { // ANSI数字字符
-			sb += string(c)
-			continue
-		}
-		switch { // 中文全角数字字符
-		case string(c) == "０":
-			sb += "0"
-		case string(c) == "１":
-			sb += "1"
-		case string(c) == "２":
-			sb += "2"
-		case string(c) == "３":
-			sb += "3"
-		case string(c) == "４":
-			sb += "4"
-		case string(c) == "５":
-			sb += "5"
-		case string(c) == "６":
-			sb += "6"
-		case string(c) == "７":
-			sb += "7"
-		case string(c) == "８":
-			sb += "8"
-		case string(c) == "９":
-			sb += "9"
-		}
-	}
-
-	if len(sb) > 0 {
-		ri, _ := strconv.Atoi(sb)
-		return ri
-	}
-	isTen := false
-	for i := 0; i < len(text); i++ {
-		c := text[i]
-		if isTen {
-			pre := len(sb) > 0
-			sc := string(c)
-			post := sc == "一" || sc == "二" || sc == "三" || sc == "四" || sc == "五" || sc == "六" || sc == "七" || sc == "八" || sc == "九"
-			if pre {
-				if !post {
-					sb += "0"
-				}
-			} else {
-				if post {
-					sb += "1"
-				} else {
-					sb += "10"
-				}
-			}
-			isTen = false
-		}
-
-		switch {
-		case string(c) == "一":
-			sb += "1"
-		case string(c) == "二":
-			sb += "2"
-		case string(c) == "三":
-			sb += "3"
-		case string(c) == "四":
-			sb += "4"
-		case string(c) == "五":
-			sb += "5"
-		case string(c) == "六":
-			sb += "6"
-		case string(c) == "七":
-			sb += "7"
-		case string(c) == "八":
-			sb += "8"
-		case string(c) == "九":
-			sb += "9"
-		case string(c) == "十":
-			isTen = true
-		}
-		if len(sb) > 0 {
-			break
-		}
-	}
-
-	if isTen {
-		if len(sb) > 0 {
-			sb += "0"
-		} else {
-			sb += "10"
-		}
-	}
-	if len(sb) > 0 {
-		rs, _ := strconv.Atoi(sb)
-		return rs
-	}
-	return 0
 }
 
 func loadDocunentsFrom(address *Address) []Document {
@@ -623,7 +535,6 @@ func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) fl
 	}
 
 	// TODO
-
 	if sumDD == 0 || sumQQ == 0 {
 		return 0
 	}
@@ -731,6 +642,20 @@ func StoreToDocunents(address *Address, doc Document) []Document {
 	return docs
 }
 
+func generateIDFCacheEntryKey(term *Term) string {
+	key := term.Text
+	if RoadNumTerm == term.Types {
+		num := translateRoadNum(key)
+		if term.Ref == nil {
+			key = ""
+		} else {
+			key = term.Ref.Text
+		}
+		key += "-" + strconv.Itoa(num)
+	}
+	return key
+}
+
 func buildCacheKey(address *Address) string {
 	if address == nil || address.Province == nil || address.City == nil {
 		return ""
@@ -741,4 +666,110 @@ func buildCacheKey(address *Address) string {
 		res += "-" + strconv.Itoa(int(address.District.ID))
 	}
 	return res
+}
+
+/**
+ * 将道路门牌号中的数字提取出来
+ * @param text 道路门牌号，例如40号院、甲一号院等
+ * @return 返回门牌号数字
+ */
+func translateRoadNum(text string) int {
+	if len(text) == 0 {
+		return 0
+	}
+	var sb string
+	for i := 0; i < len(text); i++ {
+		c := text[i]
+		if c >= '0' && c <= '9' { // ANSI数字字符
+			sb += string(c)
+			continue
+		}
+		switch { // 中文全角数字字符
+		case string(c) == "０":
+			sb += "0"
+		case string(c) == "１":
+			sb += "1"
+		case string(c) == "２":
+			sb += "2"
+		case string(c) == "３":
+			sb += "3"
+		case string(c) == "４":
+			sb += "4"
+		case string(c) == "５":
+			sb += "5"
+		case string(c) == "６":
+			sb += "6"
+		case string(c) == "７":
+			sb += "7"
+		case string(c) == "８":
+			sb += "8"
+		case string(c) == "９":
+			sb += "9"
+		}
+	}
+
+	if len(sb) > 0 {
+		ri, _ := strconv.Atoi(sb)
+		return ri
+	}
+	isTen := false
+	for i := 0; i < len(text); i++ {
+		c := text[i]
+		if isTen {
+			pre := len(sb) > 0
+			sc := string(c)
+			post := sc == "一" || sc == "二" || sc == "三" || sc == "四" || sc == "五" || sc == "六" || sc == "七" || sc == "八" || sc == "九"
+			if pre {
+				if !post {
+					sb += "0"
+				}
+			} else {
+				if post {
+					sb += "1"
+				} else {
+					sb += "10"
+				}
+			}
+			isTen = false
+		}
+
+		switch {
+		case string(c) == "一":
+			sb += "1"
+		case string(c) == "二":
+			sb += "2"
+		case string(c) == "三":
+			sb += "3"
+		case string(c) == "四":
+			sb += "4"
+		case string(c) == "五":
+			sb += "5"
+		case string(c) == "六":
+			sb += "6"
+		case string(c) == "七":
+			sb += "7"
+		case string(c) == "八":
+			sb += "8"
+		case string(c) == "九":
+			sb += "9"
+		case string(c) == "十":
+			isTen = true
+		}
+		if len(sb) > 0 {
+			break
+		}
+	}
+
+	if isTen {
+		if len(sb) > 0 {
+			sb += "0"
+		} else {
+			sb += "10"
+		}
+	}
+	if len(sb) > 0 {
+		rs, _ := strconv.Atoi(sb)
+		return rs
+	}
+	return 0
 }
