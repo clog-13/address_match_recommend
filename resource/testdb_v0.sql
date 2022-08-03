@@ -1,58 +1,58 @@
-DROP TABLE IF EXISTS "public"."address";
+DROP TABLE IF EXISTS public.address;
 -- This script only contains the table creation statements and does not fully represent the table in database. It's still missing: indices, triggers. Do not use it as backup.
 
 -- Squences
 CREATE SEQUENCE IF NOT EXISTS address_id_seq
 
 -- Table Definition
-CREATE TABLE "public"."address" (
-    "id" int8 NOT NULL DEFAULT nextval('address_id_seq'::regclass),
-    "address_text" text,
-    "road_text" text,
-    "road_num" text,
-    "building_num" text,
-    "province_id" int8,
-    "city_id" int8,
-    "district_id" int8,
-    "street_id" int8,
-    "town_id" int8,
-    "village_id" int8,
-    "raw_text" text
+CREATE TABLE public.address (
+    id int8 NOT NULL DEFAULT nextval('address_id_seq'::regclass),
+    address_text text,
+    road_text text,
+    road_num text,
+    building_num text,
+    province_id int8,
+    city_id int8,
+    district_id int8,
+    street_id int8,
+    town_id int8,
+    village_id int8,
+    raw_text text
 );
 
 -- Column Comments
-COMMENT ON COLUMN "public"."address"."id" IS '地址ID';
-COMMENT ON COLUMN "public"."address"."address_text" IS '完整地址';
-COMMENT ON COLUMN "public"."address"."road_text" IS '道路信息';
-COMMENT ON COLUMN "public"."address"."road_num" IS '道路号';
-COMMENT ON COLUMN "public"."address"."building_num" IS '建筑信息';
+COMMENT ON COLUMN public.address.id IS '地址ID';
+COMMENT ON COLUMN public.address.address_text IS '完整地址';
+COMMENT ON COLUMN public.address.road_text IS '道路信息';
+COMMENT ON COLUMN public.address.road_num IS '道路号';
+COMMENT ON COLUMN public.address.building_num IS '建筑信息';
 
-DROP TABLE IF EXISTS "public"."bas_region";
+DROP TABLE IF EXISTS public.bas_region;
 -- This script only contains the table creation statements and does not fully represent the table in database. It's still missing: indices, triggers. Do not use it as backup.
 
 -- Squences
 CREATE SEQUENCE IF NOT EXISTS bas_region_id_seq
 
 -- Table Definition
-CREATE TABLE "public"."bas_region" (
-    "id" int4 NOT NULL DEFAULT nextval('bas_region_id_seq'::regclass),
-    "parent_id" int4 NOT NULL,
-    "types" int2 NOT NULL DEFAULT 420,
-    "name" varchar(25) NOT NULL,
-    "alias" varchar(25) NOT NULL,
-    "zip" varchar(8) NOT NULL,
-    "source" varchar(5) NOT NULL,
-    "created" timestamp NOT NULL,
-    PRIMARY KEY ("id")
+CREATE TABLE public.bas_region (
+    id int4 NOT NULL DEFAULT nextval('bas_region_id_seq'::regclass),
+    parent_id int4 NOT NULL,
+    types int2 NOT NULL DEFAULT 420,
+    name varchar(25) NOT NULL,
+    alias varchar(25) NOT NULL,
+    zip varchar(8) NOT NULL,
+    source varchar(5) NOT NULL,
+    created timestamp NOT NULL,
+    PRIMARY KEY (id)
 );
 
-INSERT INTO "public"."address" ("id", "address_text", "road_text", "road_num", "building_num", "province_id", "city_id", "district_id", "street_id", "town_id", "village_id", "raw_text") VALUES
+INSERT INTO public.address (id, address_text, road_text, road_num, building_num, province_id, city_id, district_id, street_id, town_id, village_id, raw_text) VALUES
 (1028, '成侯花园2期', '', '', '11幢901号', 320000, 320300, 320324, 0, 0, 0, '江苏徐州睢宁县成侯花园2期11幢901号');
-INSERT INTO "public"."address" ("id", "address_text", "road_text", "road_num", "building_num", "province_id", "city_id", "district_id", "street_id", "town_id", "village_id", "raw_text") VALUES
+INSERT INTO public.address (id, address_text, road_text, road_num, building_num, province_id, city_id, district_id, street_id, town_id, village_id, raw_text) VALUES
 (1029, '新城区亚星国际公寓11号楼', '', '', '', 150000, 150400, 150404, 0, 0, 0, '内蒙古赤峰松山区新城区，亚星国际公寓11号楼');
-INSERT INTO "public"."address" ("id", "address_text", "road_text", "road_num", "building_num", "province_id", "city_id", "district_id", "street_id", "town_id", "village_id", "raw_text") VALUES
+INSERT INTO public.address (id, address_text, road_text, road_num, building_num, province_id, city_id, district_id, street_id, town_id, village_id, raw_text) VALUES
 (1030, '红绿灯东路北精诚电脑芯片级维修', '南城街', '109号', '', 370000, 371400, 371427, 0, 0, 0, '山东德州夏津县南城街109号红绿灯东100米路北精诚电脑芯片级维修');
-INSERT INTO "public"."address" ("id", "address_text", "road_text", "road_num", "building_num", "province_id", "city_id", "district_id", "street_id", "town_id", "village_id", "raw_text") VALUES
+INSERT INTO public.address (id, address_text, road_text, road_num, building_num, province_id, city_id, district_id, street_id, town_id, village_id, raw_text) VALUES
 (1031, '锦绣天成小区A1', '振兴路', '', '', 330000, 330700, 330781, 0, 0, 0, '浙江金华兰溪市浙江省兰溪市振兴路锦绣天成小区A1'),
 (1032, '', '安顺街', '901号', '', 510000, 510100, 510114, 510114108, 0, 0, '四川成都新都区斑竹园镇安顺街901号'),
 (1033, '瑞景花园', '', '', '5号楼1单元', 370000, 371600, 371621, 0, 0, 0, '山东滨州惠民县瑞景花园5号楼1单元'),
@@ -219,13 +219,13 @@ INSERT INTO "public"."address" ("id", "address_text", "road_text", "road_num", "
 (1194, '泉韵花苑', '明堂路', '', '4号楼2单元901', 370000, 370100, 370181, 0, 0, 0, '山东济南章丘市明堂路泉韵花苑4号楼2单元901'),
 (1195, '夏家嘴村3组', '', '', '', 420000, 420100, 420114, 0, 0, 0, '湖北武汉蔡甸区夏家嘴村3组');
 
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (1, 0, 10, '中国', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (110000, 1, 150, '北京', '北京市', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (110100, 110000, 151, '北京市', '北京', '100000', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (110101, 110100, 300, '东城区', '东城', '100010', 'TB', '2016-10-23 19:15:30'),
 (110102, 110100, 300, '西城区', '西城', '100032', 'TB', '2016-10-23 19:15:30'),
 (110103, 110100, 300, '崇文区', '崇文', '100061', 'TB', '2016-10-23 19:15:30'),
@@ -609,7 +609,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (150302, 150300, 300, '海勃湾区', '海勃湾', '016000', 'TB', '2016-10-23 19:15:30'),
 (150303, 150300, 300, '海南区', '海南', '016030', 'TB', '2016-10-23 19:15:30'),
 (150304, 150300, 300, '乌达区', '乌达', '016040', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (150400, 150000, 200, '赤峰市', '赤峰', '024000', 'TB', '2016-10-23 19:15:30'),
 (150402, 150400, 300, '红山区', '红山', '024020', 'TB', '2016-10-23 19:15:30'),
 (150403, 150400, 300, '元宝山区', '元宝山', '024076', 'TB', '2016-10-23 19:15:30'),
@@ -756,7 +756,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (210522, 210500, 300, '桓仁满族自治县', '桓仁县;桓仁', '117200', 'TB', '2016-10-23 19:15:30'),
 (210600, 210000, 200, '丹东市', '丹东', '118000', 'TB', '2016-10-23 19:15:30'),
 (210602, 210600, 300, '元宝区', '元宝', '118000', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (210603, 210600, 300, '振兴区', '振兴', '118002', 'TB', '2016-10-23 19:15:30'),
 (210604, 210600, 300, '振安区', '振安', '118001', 'TB', '2016-10-23 19:15:30'),
 (210624, 210600, 300, '宽甸满族自治县', '宽甸县;宽甸', '118200', 'TB', '2016-10-23 19:15:30'),
@@ -891,7 +891,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (222402, 222400, 300, '图们市', '图们', '133100', 'TB', '2016-10-23 19:15:30'),
 (222403, 222400, 300, '敦化市', '敦化', '133700', 'TB', '2016-10-23 19:15:30'),
 (222404, 222400, 300, '珲春市', '珲春', '133300', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (222405, 222400, 300, '龙井市', '龙井', '133400', 'TB', '2016-10-23 19:15:30'),
 (222406, 222400, 300, '和龙市', '和龙', '133500', 'TB', '2016-10-23 19:15:30'),
 (222424, 222400, 300, '汪清县', '汪清', '133200', 'TB', '2016-10-23 19:15:30'),
@@ -2153,7 +2153,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (430525, 430500, 300, '洞口县', '洞口', '422300', 'TB', '2016-10-23 19:15:30'),
 (430527, 430500, 300, '绥宁县', '绥宁', '422600', 'TB', '2016-10-23 19:15:30'),
 (430528, 430500, 300, '新宁县', '新宁', '422700', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (430529, 430500, 300, '城步苗族自治县', '城步县;城步', '422500', 'TB', '2016-10-23 19:15:30'),
 (430581, 430500, 300, '武冈市', '武冈', '422400', 'TB', '2016-10-23 19:15:30'),
 (430600, 430000, 200, '岳阳市', '岳阳', '414000', 'TB', '2016-10-23 19:15:30'),
@@ -2832,7 +2832,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (520329, 520300, 300, '余庆县', '余庆', '564400', 'TB', '2016-10-23 19:15:30'),
 (520330, 520300, 300, '习水县', '习水', '564600', 'TB', '2016-10-23 19:15:30'),
 (520381, 520300, 300, '赤水市', '赤水', '564700', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (520382, 520300, 300, '仁怀市', '仁怀', '564500', 'TB', '2016-10-23 19:15:30'),
 (520400, 520000, 200, '安顺市', '安顺', '561000', 'TB', '2016-10-23 19:15:30'),
 (520402, 520400, 300, '西秀区', '西秀', '561000', 'TB', '2016-10-23 19:15:30'),
@@ -3366,7 +3366,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (632221, 632200, 300, '门源回族自治县', '门源县;门源', '810300', 'TB', '2016-10-23 19:15:30'),
 (632222, 632200, 300, '祁连县', '祁连', '810400', 'TB', '2016-10-23 19:15:30'),
 (632223, 632200, 300, '海晏县', '海晏', '812200', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (632224, 632200, 300, '刚察县', '刚察', '812300', 'TB', '2016-10-23 19:15:30'),
 (632300, 630000, 200, '黄南藏族自治州', '黄南自治州;黄南州;黄南', '', 'TB', '2016-10-23 19:15:30'),
 (632321, 632300, 300, '同仁县', '同仁', '811300', 'TB', '2016-10-23 19:15:30'),
@@ -6674,7 +6674,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (131002100, 131002, 450, '落垡镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (131002101, 131002, 450, '码头镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (131002102, 131002, 450, '葛渔城镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (131002103, 131002, 450, '东沽港镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (131002200, 131002, 450, '杨税务乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (131002201, 131002, 450, '仇庄乡', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -8370,11 +8370,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (141182107, 141182, 450, '杨家庄镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (141182108, 141182, 450, '峪道河镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (141182200, 141182, 450, '西河乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (141182201, 141182, 450, '阳城乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (141182202, 141182, 450, '栗家庄乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (141182400, 141182, 450, '南薰街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (141182401, 141182, 450, '辰北街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (150102001, 150102, 450, '海拉尔东路街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -11620,7 +11620,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (220381407, 220381, 450, '范家屯经济开发区', '', '', 'TB', '2016-10-23 19:15:30'),
 (220382001, 220382, 450, '郑家屯街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (220382002, 220382, 450, '辽西街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (220382003, 220382, 450, '辽南街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (220382004, 220382, 450, '辽北街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (220382005, 220382, 450, '辽东街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -13378,11 +13378,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (230722500, 230722, 450, '嘉荫农场', '', '', 'TB', '2016-10-23 19:15:30'),
 (230781100, 230781, 450, '铁力镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (230781101, 230781, 450, '双丰镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (230781102, 230781, 450, '桃山镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (230781104, 230781, 450, '朗乡镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (230781200, 230781, 450, '年丰乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (230781201, 230781, 450, '工农乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (230781202, 230781, 450, '王杨乡', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -16714,7 +16714,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (330723203, 330723, 450, '坦洪乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (330723204, 330723, 450, '西联乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (330723205, 330723, 450, '三港乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (330723206, 330723, 450, '大溪口乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (330726001, 330726, 450, '浦南街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (330726002, 330726, 450, '仙华街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -18386,11 +18386,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (341226121, 341226, 450, '古城镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (341226200, 341226, 450, '建颍乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (341226201, 341226, 450, '五十铺乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (341226202, 341226, 450, '盛堂乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (341226203, 341226, 450, '关屯乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (341226204, 341226, 450, '垂岗乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (341226205, 341226, 450, '赛涧回族乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (341226206, 341226, 450, '刘集乡', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -21759,7 +21759,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (361122105, 361122, 450, '湖丰镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (361122106, 361122, 450, '大南镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (361122107, 361122, 450, '排山镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (361122108, 361122, 450, '毛村镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (361122109, 361122, 450, '枧底镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (361122110, 361122, 450, '泉波镇', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -23394,11 +23394,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (371482202, 371482, 450, '莒镇乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (371502001, 371502, 450, '古楼街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (371502002, 371502, 450, '柳园街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (371502003, 371502, 450, '新区街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (371502004, 371502, 450, '湖西街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (371502005, 371502, 450, '道口铺街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (371502006, 371502, 450, '阎寺街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (371502007, 371502, 450, '凤凰街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -26745,7 +26745,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (420502201, 420502, 450, '窑湾乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (420502401, 420502, 450, '峡口风景区', '', '', 'TB', '2016-10-23 19:15:30'),
 (420503001, 420503, 450, '大公桥街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (420503002, 420503, 450, '万寿桥街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (420503003, 420503, 450, '宝塔河街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (420503004, 420503, 450, '伍家岗街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -28402,11 +28402,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (430426203, 430426, 450, '四明山乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (430481001, 430481, 450, '蔡子池街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (430481002, 430481, 450, '灶市街街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (430481003, 430481, 450, '水东江街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (430481004, 430481, 450, '五里牌街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (430481005, 430481, 450, '三顺街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (430481100, 430481, 450, '黄市镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (430481101, 430481, 450, '小水镇', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -31779,7 +31779,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (441882104, 441882, 450, '西岸镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (441882105, 441882, 450, '保安镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (441882106, 441882, 450, '丰阳镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (441882107, 441882, 450, '东陂镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (441882109, 441882, 450, '九陂镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (441882118, 441882, 450, '西江镇', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -33410,11 +33410,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (460108401, 460108, 450, '国营三江农场', '', '', 'TB', '2016-10-23 19:15:30'),
 (460108500, 460108, 450, '罗牛山农场', '', '', 'TB', '2016-10-23 19:15:30'),
 (460321451, 460321, 450, '永兴岛', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (460322451, 460322, 450, '永暑岛', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (460323451, 460323, 450, '中沙岛礁', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (469001100, 469001, 450, '通什镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (469001101, 469001, 450, '南圣镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (469001102, 469001, 450, '毛阳镇', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -36823,7 +36823,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (511325229, 511325, 450, '东太乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (511325230, 511325, 450, '永清乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (511325231, 511325, 450, '金山乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (511325232, 511325, 450, '罐垭乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (511381001, 511381, 450, '保宁街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (511381003, 511381, 450, '沙溪街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -38418,11 +38418,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (513232214, 513232, 450, '求吉乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (513232215, 513232, 450, '包座乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (513232400, 513232, 450, '白河牧场', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (513232401, 513232, 450, '辖曼牧场', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (513233100, 513233, 450, '邛溪镇', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (513233101, 513233, 450, '刷经寺镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (513233102, 513233, 450, '瓦切镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (513233200, 513233, 450, '安曲乡', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -41806,7 +41806,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (532324105, 532324, 450, '马街镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (532324106, 532324, 450, '兔街镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (532324201, 532324, 450, '雨露白族自治乡', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (532324202, 532324, 450, '一街乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (532324203, 532324, 450, '罗武庄乡', '', '', 'TB', '2016-10-23 19:15:30'),
 (532324204, 532324, 450, '五顶山乡', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -43426,11 +43426,11 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (610402007, 610402, 450, '沣东街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (610402008, 610402, 450, '钓台街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (610402009, 610402, 450, '马泉街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (610402010, 610402, 450, '渭滨街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (610402011, 610402, 450, '双照街道', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (610402105, 610402, 450, '马庄镇', '', '', 'TB', '2016-10-23 19:15:30'),
 (610403001, 610403, 450, '杨陵街道', '', '', 'TB', '2016-10-23 19:15:30'),
 (610403002, 610403, 450, '李台街道', '', '', 'TB', '2016-10-23 19:15:30'),
@@ -46804,7 +46804,7 @@ INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", 
 (652223500, 652223, 450, '兵团淖毛湖农场', '', '', 'TB', '2016-10-23 19:15:30'),
 (652301001, 652301, 450, '宁边路办事处', '', '', 'TB', '2016-10-23 19:15:30'),
 (652301002, 652301, 450, '延安北路办事处', '', '', 'TB', '2016-10-23 19:15:30');
-INSERT INTO "public"."bas_region" ("id", "parent_id", "types", "name", "alias", "zip", "source", "created") VALUES
+INSERT INTO public.bas_region (id, parent_id, types, name, alias, zip, source, created) VALUES
 (652301003, 652301, 450, '北京南路办事处', '', '', 'TB', '2016-10-23 19:15:30'),
 (652301004, 652301, 450, '建国路办事处', '', '', 'TB', '2016-10-23 19:15:30'),
 (652301005, 652301, 450, '中山路街道', '', '', 'TB', '2016-10-23 19:15:30'),

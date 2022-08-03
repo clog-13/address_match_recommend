@@ -5,7 +5,6 @@
 3. 查询接口`core.FindsimilarAddress(addressText string, topN int, explain bool) (Query, bool)` 
 4. 添加数据接口`core.ImportAddr(text string)`
 
-
 # 算法说明
 参照
 https://github.com/liuzhibin-cn/address-semantic-search
@@ -47,33 +46,30 @@ https://github.com/liuzhibin-cn/address-semantic-search
 2. 将 Address 解析为 Document
 
    ```go
-   type Document struct {
-       Id uint
-   
-       // 文档所有词条, 按照文档顺序, 未去重
-       Terms    []*Term
-       TermsMap map[string]*Term
-   
-       TownId       uint
-       Town         *Term // 乡镇相关的词条信息
-       VillageId    uint
-       Village      *Term
-       RoadId       uint
-       Road         *Term // 道路信息
-       RoadNumId    uint
-       RoadNum      *Term
-       RoadNumValue int
-   }
-   type Term struct {
-       Id uint
-   
-       TermId uint
-       Text   string
-       Types  int
-       Idf    float64
-   
-       Ref *Term
-   }
+    type Document struct {
+    ID int
+    // 文档所有词条, 按照文档顺序, 未去重
+    Terms    []*Term
+    TermsMap map[string]*Term
+    
+        Province *Term
+        City     *Term
+        District *Term
+    
+        Street       *Term
+        Town         *Term // 乡镇相关的词条信息
+        Village      *Term
+        Road         *Term // 道路信息
+        RoadNum      *Term
+        RoadNumValue int
+    }
+    type Term struct {
+        Text  string
+        Types int
+        Idf   float64
+    
+        Ref *Term
+    }
    ```
 
 3. 利用 文本TF-IDF余弦相似度算法 和 Lucene的评分算法 计算相似度
@@ -143,6 +139,6 @@ https://github.com/liuzhibin-cn/address-semantic-search
 - ...
 
 # 已知部分问题
-- 解析不完全 导致相同字符串相似性计算不能到 1
+- 相同字符串相似性计算值不为 1
 - gse分词库 会丢弃 ‘-’ 后的内容（“xxxx小区2-1-17” -> “xxxx小区, 2”），暂时处理为“xxxx小区2117”
 - 内存空间数据浪费

@@ -18,14 +18,13 @@ var (
 
 	MissingIdf = 4.0
 
-	// TODO
-
 	persister   = NewAddressPersister()
 	interpreter = NewAddressInterpreter(persister)
 	segmenter   = segment.NewGseSegment()
 
-	VectorsCache = make(map[string][]Document)
-	IdfCache     = make(map[string]map[string]float64)
+	IdfCache = make(map[string]map[string]float64)
+	// TODO
+	//VectorsCache = make(map[string][]Document)
 
 	bloom = utils.NewCountingBloomFilter(1000000, 0.00001)
 )
@@ -331,57 +330,57 @@ func loadDocunentsFrom(address *Address) []Document {
 	//}
 	//docs := make([]Document, 0)
 
-	docs, ok := VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
-	if !ok {
-		docs = loadDocuments()
-		//if docs == nil {
-		//	docs = make([]Document, 0)
-		//	VectorsCache[cacheKey] = docs
-		//}
+	//docs, ok := VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
+	//if !ok {
+	docs := loadDocuments()
+	//if docs == nil {
+	//	docs = make([]Document, 0)
+	//	VectorsCache[cacheKey] = docs
+	//}
 
-		// 为所有词条计算IDF并缓存
-		idfs := IdfCache[cacheKey]
+	// 为所有词条计算IDF并缓存
+	idfs := IdfCache[cacheKey]
+	if idfs == nil {
+		// TODO
+		idfs = IdfCache[cacheKey]
 		if idfs == nil {
-			// TODO
-			idfs = IdfCache[cacheKey]
-			if idfs == nil {
-				termReferences := statInverseDocRefers(docs)
+			termReferences := statInverseDocRefers(docs)
 
-				idfs = make(map[string]float64, len(termReferences))
-				for k, v := range termReferences {
-					idf := 0.0
-					if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
-						idf = 2.0
-					} else {
-						idf = math.Log(float64(len(docs) / (v + 1)))
-					}
-					if idf < 0.0 {
-						idf = 0.0
-					}
-					idfs[k] = idf
+			idfs = make(map[string]float64, len(termReferences))
+			for k, v := range termReferences {
+				idf := 0.0
+				if utils.IsAnsiChars(k) || utils.IsNumericChars(k) {
+					idf = 2.0
+				} else {
+					idf = math.Log(float64(len(docs) / (v + 1)))
 				}
-				//IdfCache[cacheKey] = idfs
+				if idf < 0.0 {
+					idf = 0.0
+				}
+				idfs[k] = idf
 			}
-		}
-
-		for _, doc := range docs {
-			if doc.Town != nil {
-				doc.Town.Idf = idfs[generateIDFCacheEntryKey(doc.Town)]
-			}
-			if doc.Village != nil {
-				doc.Village.Idf = idfs[generateIDFCacheEntryKey(doc.Village)]
-			}
-			if doc.Road != nil {
-				doc.Road.Idf = idfs[generateIDFCacheEntryKey(doc.Road)]
-			}
-			if doc.RoadNum != nil {
-				doc.RoadNum.Idf = idfs[generateIDFCacheEntryKey(doc.RoadNum)]
-			}
-			for _, term := range doc.Terms {
-				term.Idf = idfs[generateIDFCacheEntryKey(term)]
-			}
+			//IdfCache[cacheKey] = idfs
 		}
 	}
+
+	for _, doc := range docs {
+		if doc.Town != nil {
+			doc.Town.Idf = idfs[generateIDFCacheEntryKey(doc.Town)]
+		}
+		if doc.Village != nil {
+			doc.Village.Idf = idfs[generateIDFCacheEntryKey(doc.Village)]
+		}
+		if doc.Road != nil {
+			doc.Road.Idf = idfs[generateIDFCacheEntryKey(doc.Road)]
+		}
+		if doc.RoadNum != nil {
+			doc.RoadNum.Idf = idfs[generateIDFCacheEntryKey(doc.RoadNum)]
+		}
+		for _, term := range doc.Terms {
+			term.Idf = idfs[generateIDFCacheEntryKey(term)]
+		}
+	}
+	//}
 
 	return docs
 }
@@ -394,41 +393,41 @@ func loadDocuments() []Document {
 	return docs
 }
 
-func loadDocumentsCache(addr *Address) []Document {
-	persister := new(AddressPersister)
-	root := persister.RootRegion()
-	for _, province := range root.Children {
-		for _, city := range province.Children {
-			if city.Children == nil {
-				addrs := persister.LoadAddrsPC(province.ID, city.ID)
-				if addrs == nil || len(addrs) == 0 {
-					continue
-				}
-				docs := make([]Document, 0)
-				for _, addr := range addrs {
-					docs = append(docs, analyze(&addr))
-				}
-				key := buildCacheKey(&addrs[0])
-				VectorsCache[key] = docs
-			} else {
-				for _, country := range city.Children {
-					addrs := persister.LoadAddrsPCD(province.ID, city.ID, country.ID)
-					if addrs == nil || len(addrs) == 0 {
-						continue
-					}
-					docs := make([]Document, 0)
-					for _, addr := range addrs {
-						docs = append(docs, analyze(&addr))
-					}
-					key := buildCacheKey(&addrs[0])
-					VectorsCache[key] = docs
-				}
-			}
-		}
-	}
-
-	return VectorsCache[buildCacheKey(addr)]
-}
+//func loadDocumentsCache(addr *Address) []Document {
+//	persister := new(AddressPersister)
+//	root := persister.RootRegion()
+//	for _, province := range root.Children {
+//		for _, city := range province.Children {
+//			if city.Children == nil {
+//				addrs := persister.LoadAddrsPC(province.ID, city.ID)
+//				if addrs == nil || len(addrs) == 0 {
+//					continue
+//				}
+//				docs := make([]Document, 0)
+//				for _, addr := range addrs {
+//					docs = append(docs, analyze(&addr))
+//				}
+//				key := buildCacheKey(&addrs[0])
+//				VectorsCache[key] = docs
+//			} else {
+//				for _, country := range city.Children {
+//					addrs := persister.LoadAddrsPCD(province.ID, city.ID, country.ID)
+//					if addrs == nil || len(addrs) == 0 {
+//						continue
+//					}
+//					docs := make([]Document, 0)
+//					for _, addr := range addrs {
+//						docs = append(docs, analyze(&addr))
+//					}
+//					key := buildCacheKey(&addrs[0])
+//					VectorsCache[key] = docs
+//				}
+//			}
+//		}
+//	}
+//
+//	return VectorsCache[buildCacheKey(addr)]
+//}
 
 func computeDocSimilarity(query *Query, doc Document, topN int, explain bool) float64 {
 	var dterm *Term
@@ -588,13 +587,13 @@ func StoreToDocunents(address *Address, doc Document) []Document {
 	}
 	docs := make([]Document, 0)
 
-	docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
-	if docs == nil {
-		docs = make([]Document, 0)
-		VectorsCache[cacheKey] = docs
-	} else {
-		docs = append(docs, doc)
-	}
+	//docs = VectorsCache[cacheKey] // 从内存读取，如果未缓存到内存，则从文件加载到内存中
+	//if docs == nil {
+	//docs = make([]Document, 0)
+	//VectorsCache[cacheKey] = docs
+	//} else {
+	//	docs = append(docs, doc)
+	//}
 
 	// 为所有词条计算IDF并缓存
 	idfs := IdfCache[cacheKey]
