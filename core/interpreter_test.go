@@ -8,13 +8,14 @@ import (
 	"testing"
 )
 
-// 河南郑州金水区河南郑州市金水区天明路和索凌路交叉口天明国际公寓C座11层901室 TODO
-
 var (
 	addrs = []string{
+		"湖北武汉汉阳区车城东路901号经济技术开发区",     // 经济技术开发区
+		"湖北武汉汉阳区汉阳经济技术开发区车城东路901号", //  冗余
+		"湖北武汉汉阳区经济技术开发区车城东路901号",     // 经济技术开发区
 		"()四{}川{aa}(bb)成（）都（cc）武[]侯[dd]区【】武【ee】侯<>大<ff>道〈〉铁〈gg〉佛「」段「hh」千盛百货对面200米金履三路288号绿地圣路易名邸[]",
 		"四川省成都高新博士公馆",
-		"湖北武汉汉阳区汉阳经济技术开发区车城东路901号",
+
 		"抚顺顺城区将军桥【将军水泥厂住宅4-1-102】 (将军桥附近)",
 		"辽宁沈阳于洪区沈阳市辽中县县城虹桥商厦西侧三单元外跨楼梯3-2-23-", // 冗余
 		"北京海淀区丹棱街18号创富大厦1106",
@@ -33,15 +34,28 @@ var (
 		"山东青岛李沧区振华路124号1单元901",
 		"辽宁大连沙河口区沿河街22号1-704 华业玫瑰东方 5号楼1单元-901号",
 	}
+
+	build = []string{
+		"河南郑州金水区河南郑州市金水区天明路和索凌路交叉口天明国际公寓C座11层901室",
+		"山东青岛四方区（撤）山东省四方区人民路285号3号楼901室",
+		"黑龙江哈尔滨南岗区文林街11号A栋901室",
+		"山东青岛市北区错埠岭二路43号楼四单元901户",
+		"山东青岛李沧区青岛市李沧区京口路64号1号楼2单元901",
+		"山东青岛李沧区青岛市李沧区大崂路1024号三单元901",
+		"辽宁大连甘井子区 大连甘井子区椒北路2号楼1单元4-901",
+		"山东青岛李沧区振华路124号1单元901",
+		"辽宁大连沙河口区沿河街22号1-704 华业玫瑰东方 5号楼1单元-901号", // TODO
+	}
 )
 
 func TestInterpret(t *testing.T) {
 	interpreter := NewAddressInterpreter(models.NewAddressPersister())
-	addr := &models.Address{}
+
 	for _, v := range addrs {
-		addr.AddressText = v
+		//for _, v := range build {
+		addr := &models.Address{AddressText: v}
 		interpreter.Interpret(addr)
-		fmt.Println(addr)
+		fmt.Println(addr.RoadText, addr.AddressText)
 	}
 }
 
@@ -87,13 +101,13 @@ func TestRemoveSpecialChars(t *testing.T) {
 
 func TestExtractBuildingNum(t *testing.T) {
 	ai := NewAddressInterpreter(models.NewAddressPersister())
-	for _, v := range nochar {
+	for _, v := range build {
 		addr := &models.Address{AddressText: v}
 		// 清洗下开头垃圾数据, 针对用户数据
 		ai.prepare(addr)
 		// 提取建筑物号
 		ai.extractBuildingNum(addr)
-		fmt.Println(addr.AddressText, addr.BuildingNum)
+		fmt.Println(addr.BuildingNum)
 	}
 }
 

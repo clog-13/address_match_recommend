@@ -95,6 +95,7 @@ func analyze(addr *Address) Document {
 
 	// 分词, 仅针对AddressEntity的text（地址解析后剩余文本）进行分词
 	tokens := make([]string, 0)
+	addr.AddressText = strings.ReplaceAll(addr.AddressText, "-", "")
 	if len(addr.AddressText) > 0 {
 		tokens = segmenter.Stop(segmenter.Cut(addr.AddressText))
 	}

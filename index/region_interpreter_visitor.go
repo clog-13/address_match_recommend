@@ -46,7 +46,9 @@ func (riv *RegionInterpreterVisitor) StartRound() {
 func (riv *RegionInterpreterVisitor) Visit(entry *TermIndexEntry, text []rune, pos int) bool {
 	// 找到最匹配的 被索引对象
 	acceptableItem := riv.findAcceptableItem(entry, text, pos)
-	if acceptableItem == nil { // 没有匹配对象，匹配不成功，返回
+	// 没有匹配对象，匹配不成功，返回
+	if acceptableItem == nil || (len(riv.stack) > 0 && acceptableItem.Types == riv.stack[len(riv.stack)-1].Types &&
+		acceptableItem.Value.Equal(riv.stack[len(riv.stack)-1].Value)) {
 		return false
 	}
 
@@ -258,11 +260,11 @@ func isFullMatch(entry *TermIndexEntry, region *Region) bool {
 	if region == nil {
 		return false
 	}
-	if len(entry.Key) == len(region.Name) {
+	if len([]rune(entry.Key)) == len([]rune(region.Name)) {
 		return true
 	}
 	if region.Types == StreetRegion && strings.HasSuffix(region.Name, "街道") &&
-		len(region.Name) == len(entry.Key)+1 {
+		len([]rune(region.Name)) == len([]rune(entry.Key))+1 {
 		return true // xx街道，使用别名xx镇、xx乡匹配上的，认为是全名匹配
 	}
 	return false
@@ -304,6 +306,12 @@ func (riv *RegionInterpreterVisitor) positioning(
 				}
 			}
 			return pos + 1
+		}
+		// fix: 如果已经匹配最低等级
+		if riv.CurDivision.Town != nil || riv.CurDivision.Street != nil {
+			if !ok {
+				riv.DeepMostPos = riv.CurrentPos
+			}
 		}
 	}
 	return pos
@@ -401,7 +409,8 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 
 	indexTerm := riv.stack[len(riv.stack)-1] // 当前访问的索引对象出栈
 	riv.stack = riv.stack[:len(riv.stack)-1]
-	riv.CurrentPos = pos - len(entry.Key) // 恢复当前位置指针
+	lp := len([]rune(entry.Key))
+	riv.CurrentPos = pos - lp // 恢复当前位置指针
 
 	if isFullMatch(entry, indexTerm.Value) {
 		riv.fullMatchCount++ // 更新全名匹配的数量
@@ -418,8 +427,7 @@ func (riv *RegionInterpreterVisitor) EndVisit(entry *TermIndexEntry, pos int) {
 		}
 		r := v.Value
 		switch {
-		case r.Types == StreetRegion:
-		case r.Types == PlatformL4:
+		case r.Types == StreetRegion || r.Types == PlatformL4:
 			street = r
 			continue
 		case r.Types == TownRegion:

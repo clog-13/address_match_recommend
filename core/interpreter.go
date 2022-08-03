@@ -326,15 +326,13 @@ func (ai *AddressInterpreter) removeSpecialChars(entity *Address) {
 	text = utils.RemoveRepeatNum([]rune(text), 6)
 	entity.AddressText = text
 
-	// 去除building
-	build := entity.BuildingNum
-	if len(build) == 0 {
+	// building
+	if len(entity.BuildingNum) == 0 {
 		return
 	}
-	build = utils.Remove([]rune(entity.AddressText), specialChars1, "-一－_#")
+	entity.BuildingNum = utils.Remove([]rune(entity.BuildingNum), specialChars1, "-一－_#")
 
-	build = utils.RemoveRepeatNum([]rune(text), 6)
-	entity.BuildingNum = build
+	entity.BuildingNum = utils.RemoveRepeatNum([]rune(entity.BuildingNum), 6)
 }
 
 // 提取包括的数据
@@ -387,7 +385,7 @@ func (ai *AddressInterpreter) removeRedundancy(entity *Address) {
 		return
 	}
 
-	endIndex := len(entity.AddressText) - 2 // 采用后序数组方式匹配省市区
+	endIndex := len([]rune(entity.AddressText)) - 2 // 采用后序数组方式匹配省市区
 	for i := 0; i < endIndex; {
 		ai.visitor.Reset()
 		ai.indexBuilder.DeepMostPosQuery([]rune(entity.AddressText), i, ai.visitor)
@@ -451,12 +449,13 @@ func (ai *AddressInterpreter) extractRoad(entity *Address) {
 		ex := matches[reROAD.SubexpIndex("ex")]
 		roadNum := ex + matches[reROAD.SubexpIndex("roadnum")]
 
+		//leftText := string([]rune(entity.AddressText[len([]rune(road))+len([]rune(roadNum)):]))
 		leftText := entity.AddressText[len(road)+len(roadNum):]
 		if strings.HasPrefix(leftText, "小区") {
 			return
 		}
-		entity.RoadText = fixRoad(road)
-		if len(roadNum) == 1 { // 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
+		entity.RoadText = fixRoad([]rune(road))
+		if len([]rune(roadNum)) == 1 { // 仅包含【甲乙丙丁】单个汉字，不能作为门牌号
 			entity.AddressText = roadNum + leftText
 		} else {
 			entity.RoadNum = roadNum
@@ -469,11 +468,11 @@ func (ai *AddressInterpreter) extractRoad(entity *Address) {
 	}
 }
 
-func fixRoad(road string) string {
-	if len(road) == 0 || road[:len(road)/2] != road[len(road)/2:] {
-		return road
+func fixRoad(road []rune) string {
+	if len(road) == 0 || string(road[:len(road)/2]) != string(road[len(road)/2:]) {
+		return string(road)
 	}
-	return road[:len(road)/2]
+	return string(road[:len(road)/2])
 }
 
 func fixRoadBuilding(entity *Address) {
